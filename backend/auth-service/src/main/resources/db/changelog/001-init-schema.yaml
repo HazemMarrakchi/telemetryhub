@@ -120,19 +120,22 @@ databaseChangeLog:
             tableName: users
             indexName: idx_users_email
             columns:
-              - email
+              - column:
+                  name: email
         - createIndex:
             schemaName: auth
             tableName: users
             indexName: idx_users_tenant_id
             columns:
-              - tenant_id
+              - column:
+                  name: tenant_id
         - createIndex:
             schemaName: auth
             tableName: users
             indexName: idx_users_role
             columns:
-              - role
+              - column:
+                  name: role
         - createTable:
             schemaName: auth
             tableName: refresh_tokens
@@ -194,19 +197,22 @@ databaseChangeLog:
             tableName: refresh_tokens
             indexName: idx_refresh_token_jti
             columns:
-              - jti
+              - column:
+                  name: jti
         - createIndex:
             schemaName: auth
             tableName: refresh_tokens
             indexName: idx_refresh_token_user_id
             columns:
-              - user_id
+              - column:
+                  name: user_id
         - createIndex:
             schemaName: auth
             tableName: refresh_tokens
             indexName: idx_refresh_token_expires_at
             columns:
-              - expires_at
+              - column:
+                  name: expires_at
         - createTable:
             schemaName: auth
             tableName: invitations
@@ -274,16 +280,19 @@ databaseChangeLog:
             tableName: invitations
             indexName: idx_invitations_token
             columns:
-              - token
+              - column:
+                  name: token
         - createIndex:
             schemaName: auth
             tableName: invitations
             indexName: idx_invitations_tenant_id
             columns:
-              - tenant_id
+              - column:
+                  name: tenant_id
         - createIndex:
             schemaName: auth
             tableName: invitations
             indexName: idx_invitations_email
             columns:
-              - email
+              - column:
+                  name: email
