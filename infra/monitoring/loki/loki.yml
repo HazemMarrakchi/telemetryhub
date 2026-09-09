@@ -1,0 +1,28 @@
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets: ["127.0.0.1:9090"]
+
+  - job_name: telemetryhub-gateway
+    static_configs:
+      - targets: ["gateway-service:8080"]
+
+  - job_name: telemetryhub-auth
+    static_configs:
+      - targets: ["auth-service:8081"]
+
+  - job_name: telemetryhub-fleet
+    static_configs:
+      - targets: ["fleet-service:8082"]
+
+  - job_name: telemetryhub-ingestion
+    static_configs:
+      - targets: ["ingestion-service:8083"]
+
+  - job_name: telemetryhub-alerting
+    static_configs:
+      - targets: ["alerting-service:8084"]
+
+  - job_name: telemetryhub-reports
+    static_configs:
+      - targets: ["reports-service:8085"]

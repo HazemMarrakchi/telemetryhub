@@ -1,0 +1,49 @@
+{{- range $svc := .Values.services }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $.Release.Name }}-{{ $svc.name }}
+  labels:
+    app: {{ $svc.name }}
+    {{- include "telemetryhub.labels" $ | nindent 4 }}
+    {{- include "telemetryhub.tags" $ | nindent 4 }}
+spec:
+  replicas: {{ $svc.replicas | default 1 }}
+  selector:
+    matchLabels:
+      app: {{ $svc.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ $svc.name }}
+        {{- include "telemetryhub.labels" $ | nindent 8 }}
+    spec:
+      containers:
+        - name: {{ $svc.name }}
+          image: "{{ $.Values.global.registry }}/{{ $svc.image }}"
+          imagePullPolicy: {{ $.Values.global.imagePullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ $svc.port }}
+              protocol: TCP
+          env:
+            {{- range $key, $value := $svc.env }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+          resources:
+            {{- toYaml $svc.resources | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: {{ $svc.probePath | default "/actuator/health" }}
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: {{ $svc.probePath | default "/actuator/health" }}
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+{{- end }}

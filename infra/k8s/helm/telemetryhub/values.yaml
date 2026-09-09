@@ -1,0 +1,145 @@
+global:
+  imagePullPolicy: IfNotPresent
+  registry: ghcr.io
+
+commonTags:
+  - key: app.kubernetes.io/component
+    value: backend
+  - key: app.kubernetes.io/part-of
+    value: telemetryhub
+
+jwt:
+  secret: TELEMETRYHUB_DEV_SECRET_KEY_CHANGE_ME_IN_PRODUCTION_0123456789
+  issuer: telemetryhub-auth
+
+kafka:
+  bootstrap: telemetryhub-kafka:9092
+
+postgres:
+  url: jdbc:postgresql://telemetryhub-postgres:5432/telemetryhub
+
+redis:
+  url: redis://telemetryhub-redis:6379
+
+services:
+  - name: auth-service
+    image: telemetryhub/telemetryhub-auth:latest
+    port: 8081
+    replicas: 1
+    env:
+      SPRING_PROFILES_ACTIVE: k8s
+      TH_JWT_SECRET: TELEMETRYHUB_DEV_SECRET_KEY_CHANGE_ME_IN_PRODUCTION_0123456789
+      TH_JWT_ISSUER: telemetryhub-auth
+    resources:
+      limits:
+        cpu: 500m
+        memory: 512Mi
+      requests:
+        cpu: 100m
+        memory: 256Mi
+  - name: fleet-service
+    image: telemetryhub/telemetryhub-fleet:latest
+    port: 8082
+    replicas: 1
+    env:
+      SPRING_PROFILES_ACTIVE: k8s
+      TH_JWT_SECRET: TELEMETRYHUB_DEV_SECRET_KEY_CHANGE_ME_IN_PRODUCTION_0123456789
+      TH_JWT_ISSUER: telemetryhub-auth
+    resources:
+      limits:
+        cpu: 500m
+        memory: 512Mi
+      requests:
+        cpu: 100m
+        memory: 256Mi
+  - name: ingestion-service
+    image: telemetryhub/telemetryhub-ingestion:latest
+    port: 8083
+    replicas: 2
+    env:
+      SPRING_PROFILES_ACTIVE: k8s
+      TH_JWT_SECRET: TELEMETRYHUB_DEV_SECRET_KEY_CHANGE_ME_IN_PRODUCTION_0123456789
+      TH_JWT_ISSUER: telemetryhub-auth
+      KAFKA_BOOTSTRAP: telemetryhub-kafka:9092
+      KAFKA_RAW_TOPIC: telemetry.raw
+    resources:
+      limits:
+        cpu: "1"
+        memory: 896Mi
+      requests:
+        cpu: 200m
+        memory: 384Mi
+  - name: alerting-service
+    image: telemetryhub/telemetryhub-alerting:latest
+    port: 8084
+    replicas: 1
+    env:
+      SPRING_PROFILES_ACTIVE: k8s
+      TH_JWT_SECRET: TELEMETRYHUB_DEV_SECRET_KEY_CHANGE_ME_IN_PRODUCTION_0123456789
+      TH_JWT_ISSUER: telemetryhub-auth
+      KAFKA_BOOTSTRAP: telemetryhub-kafka:9092
+    resources:
+      limits:
+        cpu: 500m
+        memory: 512Mi
+      requests:
+        cpu: 100m
+        memory: 256Mi
+  - name: reports-service
+    image: telemetryhub/telemetryhub-reports:latest
+    port: 8085
+    replicas: 1
+    env:
+      SPRING_PROFILES_ACTIVE: k8s
+      TH_JWT_SECRET: TELEMETRYHUB_DEV_SECRET_KEY_CHANGE_ME_IN_PRODUCTION_0123456789
+      TH_JWT_ISSUER: telemetryhub-auth
+    resources:
+      limits:
+        cpu: 500m
+        memory: 512Mi
+      requests:
+        cpu: 100m
+        memory: 256Mi
+  - name: gateway-service
+    image: telemetryhub/telemetryhub-gateway:latest
+    port: 8080
+    replicas: 2
+    probePath: /actuator/health
+    env:
+      SPRING_PROFILES_ACTIVE: k8s
+      TH_JWT_SECRET: TELEMETRYHUB_DEV_SECRET_KEY_CHANGE_ME_IN_PRODUCTION_0123456789
+      TH_JWT_ISSUER: telemetryhub-auth
+      SPRING_DATA_REDIS_URL: redis://telemetryhub-redis:6379
+    resources:
+      limits:
+        cpu: 500m
+        memory: 512Mi
+      requests:
+        cpu: 100m
+        memory: 256Mi
+  - name: ai-service
+    image: telemetryhub/telemetryhub-ai:latest
+    port: 8090
+    replicas: 1
+    probePath: /health
+    env:
+      TH_JWT_SECRET: TELEMETRYHUB_DEV_SECRET_KEY_CHANGE_ME_IN_PRODUCTION_0123456789
+      TH_JWT_ISSUER: telemetryhub-auth
+      KAFKA_BOOTSTRAP: telemetryhub-kafka:9092
+    resources:
+      limits:
+        cpu: "1"
+        memory: 1Gi
+      requests:
+        cpu: 200m
+        memory: 512Mi
+
+ingress:
+  enabled: false
+  className: nginx
+  hosts:
+    - host: telemetryhub.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []

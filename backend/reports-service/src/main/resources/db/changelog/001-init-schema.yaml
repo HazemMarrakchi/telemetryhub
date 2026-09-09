@@ -1,0 +1,103 @@
+databaseChangeLog:
+  - changeSet:
+      id: 001-init-reports
+      author: telemetryhub
+      changes:
+        - createTable:
+            schemaName: reports
+            tableName: reports
+            remarks: "Rapports générés (PDF/CSV) avec artefact binaire"
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: tenant_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: generated_by
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: kind
+                  type: VARCHAR(12)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: status
+                  type: VARCHAR(20)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: title
+                  type: VARCHAR(150)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: range_from
+                  type: timestamptz
+                  constraints:
+                    nullable: false
+              - column:
+                  name: range_to
+                  type: timestamptz
+                  constraints:
+                    nullable: false
+              - column:
+                  name: equipment_id
+                  type: UUID
+              - column:
+                  name: metric
+                  type: VARCHAR(64)
+              - column:
+                  name: file_name
+                  type: VARCHAR(255)
+              - column:
+                  name: checksum
+                  type: VARCHAR(64)
+              - column:
+                  name: size_bytes
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    defaultValueNumeric: 0
+              - column:
+                  name: artifact
+                  type: BYTEA
+              - column:
+                  name: error_message
+                  type: VARCHAR(1000)
+              - column:
+                  name: created_at
+                  type: timestamptz
+                  constraints:
+                    nullable: false
+
+  - changeSet:
+      id: 002-reports-indexes
+      author: telemetryhub
+      changes:
+        - createIndex:
+            schemaName: reports
+            tableName: reports
+            indexName: idx_reports_tenant_created
+            columns:
+              - column:
+                  name: tenant_id
+              - column:
+                  name: created_at
+        - createIndex:
+            schemaName: reports
+            tableName: reports
+            indexName: idx_reports_tenant_status
+            columns:
+              - column:
+                  name: tenant_id
+              - column:
+                  name: status

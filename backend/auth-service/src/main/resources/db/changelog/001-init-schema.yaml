@@ -1,0 +1,289 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1
+      author: telemetryhub
+      changes:
+        - createSchema:
+            schemaName: auth
+        - createTable:
+            schemaName: auth
+            tableName: tenants
+            remarks: "Locataires SaaS (isolation multi-tenant)"
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: name
+                  type: VARCHAR(120)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: slug
+                  type: VARCHAR(80)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: active
+                  type: BOOLEAN
+                  defaultValueBoolean: true
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: TIMESTAMPTZ
+                  defaultValueComputed: "timezone('utc', now())"
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: TIMESTAMPTZ
+              - column:
+                  name: plan
+                  type: VARCHAR(64)
+                  defaultValue: "STANDARD"
+        - createTable:
+            schemaName: auth
+            tableName: users
+            remarks: "Utilisateurs de la plateforme"
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: tenant_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_users_tenant
+                    references: auth.tenants(id)
+              - column:
+                  name: email
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: full_name
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: password_hash
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: role
+                  type: VARCHAR(32)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: active
+                  type: BOOLEAN
+                  defaultValueBoolean: true
+                  constraints:
+                    nullable: false
+              - column:
+                  name: email_verified
+                  type: BOOLEAN
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: TIMESTAMPTZ
+                  defaultValueComputed: "timezone('utc', now())"
+                  constraints:
+                    nullable: false
+              - column:
+                  name: last_login_at
+                  type: TIMESTAMPTZ
+              - column:
+                  name: failed_login_attempts
+                  type: INT
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: locked_until
+                  type: TIMESTAMPTZ
+        - createIndex:
+            schemaName: auth
+            tableName: users
+            indexName: idx_users_email
+            columns:
+              - email
+        - createIndex:
+            schemaName: auth
+            tableName: users
+            indexName: idx_users_tenant_id
+            columns:
+              - tenant_id
+        - createIndex:
+            schemaName: auth
+            tableName: users
+            indexName: idx_users_role
+            columns:
+              - role
+        - createTable:
+            schemaName: auth
+            tableName: refresh_tokens
+            remarks: "Tokens de rafraîchissement persistants"
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: jti
+                  type: VARCHAR(80)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: user_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: tenant_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: issued_at
+                  type: TIMESTAMPTZ
+                  defaultValueComputed: "timezone('utc', now())"
+                  constraints:
+                    nullable: false
+              - column:
+                  name: expires_at
+                  type: TIMESTAMPTZ
+                  constraints:
+                    nullable: false
+              - column:
+                  name: revoked
+                  type: BOOLEAN
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+              - column:
+                  name: device_name
+                  type: VARCHAR(255)
+                  defaultValue: "unknown"
+                  constraints:
+                    nullable: false
+              - column:
+                  name: token_type
+                  type: VARCHAR(64)
+                  defaultValue: "REFRESH"
+                  constraints:
+                    nullable: false
+        - createIndex:
+            schemaName: auth
+            tableName: refresh_tokens
+            indexName: idx_refresh_token_jti
+            columns:
+              - jti
+        - createIndex:
+            schemaName: auth
+            tableName: refresh_tokens
+            indexName: idx_refresh_token_user_id
+            columns:
+              - user_id
+        - createIndex:
+            schemaName: auth
+            tableName: refresh_tokens
+            indexName: idx_refresh_token_expires_at
+            columns:
+              - expires_at
+        - createTable:
+            schemaName: auth
+            tableName: invitations
+            remarks: "Invitations par email pour rejoindre un tenant"
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: token
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: tenant_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: email
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: full_name
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: role
+                  type: VARCHAR(32)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: status
+                  type: VARCHAR(32)
+                  defaultValue: "PENDING"
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: TIMESTAMPTZ
+                  defaultValueComputed: "timezone('utc', now())"
+                  constraints:
+                    nullable: false
+              - column:
+                  name: expires_at
+                  type: TIMESTAMPTZ
+                  constraints:
+                    nullable: false
+              - column:
+                  name: invited_by
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: accepted_at
+                  type: TIMESTAMPTZ
+        - createIndex:
+            schemaName: auth
+            tableName: invitations
+            indexName: idx_invitations_token
+            columns:
+              - token
+        - createIndex:
+            schemaName: auth
+            tableName: invitations
+            indexName: idx_invitations_tenant_id
+            columns:
+              - tenant_id
+        - createIndex:
+            schemaName: auth
+            tableName: invitations
+            indexName: idx_invitations_email
+            columns:
+              - email

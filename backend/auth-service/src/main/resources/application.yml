@@ -1,0 +1,100 @@
+spring:
+  application:
+    name: auth-service
+  datasource:
+    url: jdbc:postgresql://localhost:5432/telemetryhub
+    username: telemetryhub
+    password: telemetryhub-dev
+  jpa:
+    hibernate:
+      ddl-auto: none
+    open-in-view: false
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+        format_sql: true
+  liquibase:
+    enabled: true
+    change-log: classpath:db/changelog/db.changelog-master.yaml
+  mail:
+    host: smtp.example.com
+    port: 587
+    username: noreply@telemetryhub.dev
+    password: change-me
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+
+server:
+  port: 8081
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+
+telemetryhub:
+  jwt:
+    issuer: telemetryhub-auth
+    secret: ${JWT_SECRET:TELEMETRYHUB_DEV_SECRET_KEY_CHANGE_ME_IN_PRODUCTION_0123456789}
+    access-token-ttl: PT15M
+    refresh-token-ttl: P30D
+    remember-me-ttl: P90D
+  security:
+    allowed-origins: http://localhost:4200
+  frontend:
+    base-url: http://localhost:4200
+  email:
+    enabled: false
+
+logging:
+  level:
+    com.telemetryhub.auth: DEBUG
+    org.springframework.security: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] %logger{36} - %msg%n"
+---
+spring:
+  config:
+    activate:
+      on-profile: docker
+  datasource:
+    url: jdbc:postgresql://postgres:5432/telemetryhub
+    username: telemetryhub
+    password: telemetryhub-dev
+telemetryhub:
+  frontend:
+    base-url: http://localhost:4200
+  email:
+    enabled: false
+---
+spring:
+  config:
+    activate:
+      on-profile: test
+  datasource:
+    url: jdbc:h2:mem:authdb;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+  liquibase:
+    enabled: true
+telemetryhub:
+  jwt:
+    secret: TEST_SECRET_KEY_THAT_IS_AT_LEAST_32_BYTES_LONG_FOR_TESTS
+  email:
+    enabled: false

@@ -1,0 +1,182 @@
+databaseChangeLog:
+  - changeSet:
+      id: 001-init-alerts
+      author: telemetryhub
+      changes:
+        - createTable:
+            schemaName: alerts
+            tableName: alert_rules
+            remarks: "Règles de seuil configurables par tenant"
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: tenant_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: name
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: description
+                  type: VARCHAR(500)
+              - column:
+                  name: equipment_id
+                  type: UUID
+              - column:
+                  name: metric
+                  type: VARCHAR(64)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: operator
+                  type: VARCHAR(10)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: threshold
+                  type: DOUBLE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: unit
+                  type: VARCHAR(24)
+              - column:
+                  name: severity
+                  type: VARCHAR(16)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: enabled
+                  type: BOOLEAN
+                  constraints:
+                    nullable: false
+                    defaultValueBoolean: true
+              - column:
+                  name: cooldown_minutes
+                  type: INT
+                  constraints:
+                    nullable: false
+                    defaultValue: "10"
+              - column:
+                  name: created_at
+                  type: timestamptz
+                  constraints:
+                    nullable: false
+
+        - createTable:
+            schemaName: alerts
+            tableName: alert_events
+            remarks: "Événements d'alerte déclenchés"
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: tenant_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: rule_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: rule_name
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: equipment_id
+                  type: UUID
+              - column:
+                  name: metric
+                  type: VARCHAR(64)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: value
+                  type: DOUBLE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: threshold
+                  type: DOUBLE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: operator
+                  type: VARCHAR(10)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: severity
+                  type: VARCHAR(16)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: status
+                  type: VARCHAR(16)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: message
+                  type: VARCHAR(255)
+              - column:
+                  name: triggered_at
+                  type: timestamptz
+                  constraints:
+                    nullable: false
+              - column:
+                  name: acknowledged_at
+                  type: timestamptz
+              - column:
+                  name: acknowledged_by
+                  type: UUID
+              - column:
+                  name: fingerprint
+                  type: VARCHAR(64)
+              - column:
+                  name: created_at
+                  type: timestamptz
+                  constraints:
+                    nullable: false
+
+  - changeSet:
+      id: 002-alerts-indexes
+      author: telemetryhub
+      changes:
+        - createIndex:
+            schemaName: alerts
+            tableName: alert_events
+            indexName: idx_alert_rules_tenant
+            columns:
+              - column:
+                  name: tenant_id
+        - createIndex:
+            schemaName: alerts
+            tableName: alert_events
+            indexName: idx_alert_events_tenant_time
+            columns:
+              - column:
+                  name: tenant_id
+              - column:
+                  name: triggered_at
+        - createIndex:
+            schemaName: alerts
+            tableName: alert_events
+            indexName: idx_alert_events_status
+            columns:
+              - column:
+                  name: status

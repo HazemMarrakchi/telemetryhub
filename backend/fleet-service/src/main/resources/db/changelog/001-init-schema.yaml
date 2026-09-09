@@ -1,0 +1,210 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1
+      author: telemetryhub
+      changes:
+        - createSchema:
+            schemaName: fleet
+        - createTable:
+            schemaName: fleet
+            tableName: equipment_models
+            remarks: "Modèles d'équipements industriels"
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: tenant_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: name
+                  type: VARCHAR(120)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: manufacturer
+                  type: VARCHAR(80)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: description
+                  type: VARCHAR(500)
+              - column:
+                  name: category
+                  type: VARCHAR(40)
+                  defaultValue: "GENERIC"
+                  constraints:
+                    nullable: false
+              - column:
+                  name: active
+                  type: BOOLEAN
+                  defaultValueBoolean: true
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: TIMESTAMPTZ
+                  defaultValueComputed: "timezone('utc', now())"
+                  constraints:
+                    nullable: false
+        - createIndex:
+            schemaName: fleet
+            tableName: equipment_models
+            indexName: idx_eq_models_tenant
+            columns:
+              - tenant_id
+        - createTable:
+            schemaName: fleet
+            tableName: sites
+            remarks: "Sites industriels géolocalisés"
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: tenant_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: name
+                  type: VARCHAR(120)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: address
+                  type: VARCHAR(255)
+              - column:
+                  name: city
+                  type: VARCHAR(80)
+              - column:
+                  name: country
+                  type: VARCHAR(40)
+              - column:
+                  name: latitude
+                  type: DOUBLE PRECISION
+                  constraints:
+                    nullable: false
+              - column:
+                  name: longitude
+                  type: DOUBLE PRECISION
+                  constraints:
+                    nullable: false
+              - column:
+                  name: active
+                  type: BOOLEAN
+                  defaultValueBoolean: true
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: TIMESTAMPTZ
+                  defaultValueComputed: "timezone('utc', now())"
+                  constraints:
+                    nullable: false
+        - createIndex:
+            schemaName: fleet
+            tableName: sites
+            indexName: idx_sites_tenant
+            columns:
+              - tenant_id
+        - createTable:
+            schemaName: fleet
+            tableName: equipments
+            remarks: "Équipements installés sur les sites"
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: tenant_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: name
+                  type: VARCHAR(120)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: serial_number
+                  type: VARCHAR(80)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: model_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_equipments_model
+                    references: fleet.equipment_models(id)
+              - column:
+                  name: site_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_equipments_site
+                    references: fleet.sites(id)
+              - column:
+                  name: status
+                  type: VARCHAR(32)
+                  defaultValue: "ACTIVE"
+                  constraints:
+                    nullable: false
+              - column:
+                  name: installed_at
+                  type: TIMESTAMPTZ
+                  defaultValueComputed: "timezone('utc', now())"
+                  constraints:
+                    nullable: false
+              - column:
+                  name: last_seen_at
+                  type: TIMESTAMPTZ
+              - column:
+                  name: next_maintenance_at
+                  type: TIMESTAMPTZ
+              - column:
+                  name: firmware_version
+                  type: VARCHAR(40)
+                  defaultValue: "1.0.0"
+                  constraints:
+                    nullable: false
+              - column:
+                  name: notes
+                  type: VARCHAR(500)
+        - createIndex:
+            schemaName: fleet
+            tableName: equipments
+            indexName: idx_equipments_tenant
+            columns:
+              - tenant_id
+        - createIndex:
+            schemaName: fleet
+            tableName: equipments
+            indexName: idx_equipments_status
+            columns:
+              - status
+        - createIndex:
+            schemaName: fleet
+            tableName: equipments
+            indexName: idx_equipments_site
+            columns:
+              - site_id
+        - createIndex:
+            schemaName: fleet
+            tableName: equipments
+            indexName: idx_equipments_next_maintenance
+            columns:
+              - next_maintenance_at

@@ -1,0 +1,35 @@
+{{- range $svc := .Values.services }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $.Release.Name }}-{{ $svc.name }}
+  labels:
+    app: {{ $svc.name }}
+    {{- include "telemetryhub.labels" $ | nindent 4 }}
+spec:
+  type: ClusterIP
+  selector:
+    app: {{ $svc.name }}
+  ports:
+    - name: http
+      port: {{ $svc.port }}
+      targetPort: http
+      protocol: TCP
+{{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "telemetryhub.fullname" . }}
+  labels:
+    {{- include "telemetryhub.labels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  selector:
+    app: gateway-service
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+      protocol: TCP

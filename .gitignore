@@ -1,0 +1,53 @@
+# ===================== Maven / Java =====================
+target/
+*.class
+*.jar
+!.mvn/wrapper/maven-wrapper.jar
+.mvn/timing.properties
+
+# ===================== Node / Angular =====================
+node_modules/
+dist/
+out/
+coverage/
+.angular/
+*.log
+.vite/
+
+# ===================== Python =====================
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# ===================== Environnements & secrets =====================
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+application-secret*.yml
+application-local*.yml
+
+# ===================== IDE =====================
+.idea/
+*.iml
+.vscode/
+*.swp
+.ktlint
+
+# ===================== OS =====================
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ===================== Infra artifacts =====================
+terraform/.terraform/
+terraform/*.tfstate
+terraform/*.tfstate.*
+*.plan
+k8s/.kube
