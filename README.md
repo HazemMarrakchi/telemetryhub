@@ -11,6 +11,10 @@ Kafka, TimescaleDB, frontend Angular 18, monitoring Prometheus/Grafana/Loki, dé
 > 🏭 **Démo** : console web sur `http://localhost:4200` — compte `admin@acme.com` / `Demo@2026`.
 > Le service `simulator` produit un flux métrique réaliste en continu pour alimenter le dashboard.
 
+[![CI](https://github.com/HazemMarrakchi/telemetryhub/actions/workflows/ci.yml/badge.svg)](https://github.com/HazemMarrakchi/telemetryhub/actions/workflows/ci.yml)
+[![Java 21](https://img.shields.io/badge/Java-21-ED8B00?logo=openjdk&logoColor=white)](https://github.com/HazemMarrakchi/telemetryhub)
+[![Angular](https://img.shields.io/badge/Angular-18-DD0031?logo=angular&logoColor=white)](https://github.com/HazemMarrakchi/telemetryhub)
+
 ---
 
 ## Architecture
