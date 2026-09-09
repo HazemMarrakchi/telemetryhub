@@ -3,6 +3,8 @@ databaseChangeLog:
       id: 001-init-metrics
       author: telemetryhub
       changes:
+        - sql:
+            sql: CREATE SCHEMA IF NOT EXISTS metrics;
         - createTable:
             schemaName: metrics
             tableName: metric_catalog
