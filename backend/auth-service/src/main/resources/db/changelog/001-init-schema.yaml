@@ -3,8 +3,8 @@ databaseChangeLog:
       id: 1
       author: telemetryhub
       changes:
-        - createSchema:
-            schemaName: auth
+        - sql:
+            sql: CREATE SCHEMA IF NOT EXISTS auth;
         - createTable:
             schemaName: auth
             tableName: tenants
