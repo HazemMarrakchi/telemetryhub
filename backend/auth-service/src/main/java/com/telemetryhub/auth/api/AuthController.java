@@ -2,6 +2,7 @@ package com.telemetryhub.auth.api;
 
 import com.telemetryhub.auth.domain.Invitation;
 import com.telemetryhub.auth.domain.Role;
+import com.telemetryhub.auth.security.TenantAuthenticationDetails;
 import com.telemetryhub.auth.service.AuthService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -62,7 +63,7 @@ public class AuthController {
 
     @PostMapping("/revoke-all")
     public ResponseEntity<Void> revokeAll(Authentication authentication) {
-        UUID userId = UUID.fromString((String) authentication.getPrincipal());
+        UUID userId = currentUserId(authentication);
         authService.revokeAllSessions(userId);
         return ResponseEntity.noContent().build();
     }
@@ -71,8 +72,8 @@ public class AuthController {
     @PreAuthorize("hasAnyRole('TENANT_ADMIN','SUPER_ADMIN')")
     public ResponseEntity<Invitation> invite(@Valid @RequestBody InviteUserRequest request,
                                              Authentication authentication) {
-        UUID actorId = UUID.fromString((String) authentication.getPrincipal());
-        UUID tenantId = UUID.fromString((String) authentication.getDetails());
+        UUID actorId = currentUserId(authentication);
+        UUID tenantId = currentTenantId(authentication);
         int validityHours = request.validityHours() > 0 ? request.validityHours() : 72;
         Invitation invitation = authService.inviteUser(
                 actorId, tenantId,
@@ -100,5 +101,17 @@ public class AuthController {
     public ResponseEntity<Void> revokeInvitation(@PathVariable UUID id) {
         authService.revokeInvitation(id);
         return ResponseEntity.noContent().build();
+    }
+
+    private static UUID currentUserId(Authentication authentication) {
+        TenantAuthenticationDetails details =
+                (TenantAuthenticationDetails) authentication.getDetails();
+        return details.userId();
+    }
+
+    private static UUID currentTenantId(Authentication authentication) {
+        TenantAuthenticationDetails details =
+                (TenantAuthenticationDetails) authentication.getDetails();
+        return details.tenantId();
     }
 }

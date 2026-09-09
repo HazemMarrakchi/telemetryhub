@@ -17,7 +17,7 @@ spring:
         - id: fleet-service
           uri: http://localhost:8082
           predicates:
-            - Path=/api/v1/models/**,/api/v1/sites/**,/api/v1/equipments/**
+            - Path=/api/v1/models/**,/api/v1/sites/**,/api/v1/equipments/**,/api/v1/maintenance/**
           filters:
             - name: RequestRateLimiter
               args:
@@ -114,7 +114,7 @@ spring:
         - id: fleet-service
           uri: http://fleet-service:8082
           predicates:
-            - Path=/api/v1/models/**,/api/v1/sites/**,/api/v1/equipments/**
+            - Path=/api/v1/models/**,/api/v1/sites/**,/api/v1/equipments/**,/api/v1/maintenance/**
           filters:
             - name: RequestRateLimiter
               args:
