@@ -9,6 +9,7 @@ import com.telemetryhub.auth.domain.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -33,18 +34,25 @@ class JwtServiceTest {
         jwtService = new JwtService(properties);
     }
 
+    private User persistedUser() {
+        Tenant tenant = new Tenant("Acme", "acme", "STANDARD");
+        ReflectionTestUtils.setField(tenant, "id", UUID.randomUUID());
+        User user = new User(tenant, "admin@acme.com", "Admin", "hash", Role.TENANT_ADMIN);
+        ReflectionTestUtils.setField(user, "id", UUID.randomUUID());
+        return user;
+    }
+
     @Test
     @DisplayName("Emet un access token contenant les claims tenant et role")
     void issuesAccessTokenWithClaims() {
-        Tenant tenant = new Tenant("Acme", "acme", "STANDARD");
-        User user = new User(tenant, "admin@acme.com", "Admin", "hash", Role.TENANT_ADMIN);
+        User user = persistedUser();
 
         String token = jwtService.issueAccessToken(user);
         assertThat(token).isNotBlank();
 
         DecodedJWT decoded = jwtService.verify(token);
         assertThat(decoded.getSubject()).isEqualTo("admin@acme.com");
-        assertThat(decoded.getClaim("tid").asString()).isEqualTo(tenant.getId().toString());
+        assertThat(decoded.getClaim("tid").asString()).isEqualTo(user.getTenant().getId().toString());
         assertThat(decoded.getClaim("role").asString()).isEqualTo("TENANT_ADMIN");
         assertThat(jwtService.isRefreshToken(decoded)).isFalse();
     }
@@ -63,8 +71,7 @@ class JwtServiceTest {
     @Test
     @DisplayName("Rejette un token falsifie")
     void rejectsTamperedToken() {
-        Tenant tenant = new Tenant("Acme", "acme", "STANDARD");
-        User user = new User(tenant, "admin@acme.com", "Admin", "hash", Role.TENANT_ADMIN);
+        User user = persistedUser();
         String token = jwtService.issueAccessToken(user);
         String tampered = token.substring(0, token.length() - 2) + "xx";
 
