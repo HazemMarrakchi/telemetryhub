@@ -1,7 +1,7 @@
 FROM maven:3.9-eclipse-temurin-21 AS build
 WORKDIR /build
 COPY . .
-RUN mvn -B -f pom.xml -pl fleet-service -am package -Dmaven.test.skip=true
+RUN --mount=type=cache,target=/root/.m2 mvn -B -f pom.xml -pl fleet-service -am package -Dmaven.test.skip=true
 
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
