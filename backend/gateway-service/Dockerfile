@@ -1,7 +1,6 @@
 FROM maven:3.9-eclipse-temurin-21 AS build
 WORKDIR /build
-COPY pom.xml pom.xml
-COPY gateway-service/ gateway-service/
+COPY . .
 RUN mvn -B -f pom.xml -pl gateway-service -am package -Dmaven.test.skip=true
 
 FROM eclipse-temurin:21-jre-alpine
