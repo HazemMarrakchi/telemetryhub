@@ -55,9 +55,7 @@ jobs:
       - name: Lint
         run: npx ng lint
       - name: Unit tests
-        run: npx ng test --watch=false --browsers=ChromeHeadless
-        env:
-          CHROME_BIN: ${{ steps.setup-chrome.outputs.chrome-path }}
+        run: npx ng test --watch=false --browsers=ChromeHeadlessNoSandbox
       - name: Production build
         run: npx ng build --configuration=production
 
