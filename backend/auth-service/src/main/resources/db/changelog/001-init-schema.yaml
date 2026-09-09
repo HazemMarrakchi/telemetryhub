@@ -36,7 +36,7 @@ databaseChangeLog:
               - column:
                   name: created_at
                   type: TIMESTAMPTZ
-                  defaultValueComputed: "timezone('utc', now())"
+                  defaultValueComputed: "now()"
                   constraints:
                     nullable: false
               - column:
@@ -100,7 +100,7 @@ databaseChangeLog:
               - column:
                   name: created_at
                   type: TIMESTAMPTZ
-                  defaultValueComputed: "timezone('utc', now())"
+                  defaultValueComputed: "now()"
                   constraints:
                     nullable: false
               - column:
@@ -166,7 +166,7 @@ databaseChangeLog:
               - column:
                   name: issued_at
                   type: TIMESTAMPTZ
-                  defaultValueComputed: "timezone('utc', now())"
+                  defaultValueComputed: "now()"
                   constraints:
                     nullable: false
               - column:
@@ -259,7 +259,7 @@ databaseChangeLog:
               - column:
                   name: created_at
                   type: TIMESTAMPTZ
-                  defaultValueComputed: "timezone('utc', now())"
+                  defaultValueComputed: "now()"
                   constraints:
                     nullable: false
               - column:
