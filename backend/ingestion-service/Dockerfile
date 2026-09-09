@@ -1,7 +1,6 @@
 FROM maven:3.9-eclipse-temurin-21 AS build
 WORKDIR /build
-COPY pom.xml pom.xml
-COPY ingestion-service/ ingestion-service/
+COPY . .
 RUN mvn -B -f pom.xml -pl ingestion-service -am package -Dmaven.test.skip=true
 
 FROM eclipse-temurin:21-jre-alpine
