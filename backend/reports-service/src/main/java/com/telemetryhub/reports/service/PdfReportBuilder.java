@@ -11,6 +11,7 @@ import com.lowagie.text.pdf.PdfPCell;
 import com.lowagie.text.pdf.PdfPTable;
 import com.lowagie.text.pdf.PdfWriter;
 import com.telemetryhub.reports.persistence.ReportRow;
+import org.springframework.stereotype.Component;
 
 import java.io.ByteArrayOutputStream;
 import java.time.ZoneOffset;
@@ -18,6 +19,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.UUID;
 
+@Component
 public class PdfReportBuilder {
 
     private static final DateTimeFormatter FMT =

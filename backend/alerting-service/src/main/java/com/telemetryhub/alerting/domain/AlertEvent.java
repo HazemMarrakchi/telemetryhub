@@ -69,7 +69,7 @@ public class AlertEvent {
 
     private UUID acknowledgedBy;
 
-    @Column(length = 64)
+    @Column(length = 128)
     private String fingerprint;
 
     @CreationTimestamp

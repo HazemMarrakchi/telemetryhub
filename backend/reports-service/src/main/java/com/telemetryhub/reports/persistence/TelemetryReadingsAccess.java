@@ -30,7 +30,10 @@ public class TelemetryReadingsAccess {
                 WHERE tenant_id = ?
                   AND recorded_at BETWEEN ? AND ?
                 """.formatted(bucketSeconds);
-        List<Object> args = new java.util.ArrayList<>(List.of(tenantId, from, to));
+        List<Object> args = new java.util.ArrayList<>(List.of(
+                tenantId,
+                new java.sql.Timestamp(from.toEpochMilli()),
+                new java.sql.Timestamp(to.toEpochMilli())));
         if (equipmentId != null) {
             sql += "  AND equipment_id = ?\n";
             args.add(equipmentId);

@@ -182,3 +182,13 @@ databaseChangeLog:
             columns:
               - column:
                   name: status
+
+  - changeSet:
+      id: 003-widen-fingerprint
+      author: telemetryhub
+      changes:
+        - modifyDataType:
+            tableName: alert_events
+            schemaName: alerts
+            columnName: fingerprint
+            newDataType: VARCHAR(128)

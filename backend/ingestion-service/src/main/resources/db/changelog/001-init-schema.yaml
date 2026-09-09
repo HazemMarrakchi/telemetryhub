@@ -45,7 +45,6 @@ databaseChangeLog:
                   name: id
                   type: UUID
                   constraints:
-                    primaryKey: true
                     nullable: false
               - column:
                   name: equipment_id
@@ -83,6 +82,13 @@ databaseChangeLog:
               - column:
                   name: device_fingerprint
                   type: VARCHAR(128)
+            primaryKey:
+              constraintName: telemetry_readings_pkey
+              columns:
+                - column:
+                    name: id
+                - column:
+                    name: recorded_at
 
   - changeSet:
       id: 002-timescale-hypertable

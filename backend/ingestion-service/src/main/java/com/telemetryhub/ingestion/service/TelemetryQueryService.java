@@ -42,7 +42,21 @@ public class TelemetryQueryService {
 
     public List<MetricPoint> latest() {
         List<Object[]> rows = repository.findLatest(tenantId(), PageRequest.of(0, 500));
-        return rows.stream().map(row -> new MetricPoint(
-                (Instant) row[0], ((Number) row[1]).doubleValue(), (String) row[2])).toList();
+        return rows.stream().map(row -> (MetricPoint) new MetricPoint() {
+            @Override
+            public Instant getTimestamp() {
+                return (Instant) row[0];
+            }
+
+            @Override
+            public double getValue() {
+                return ((Number) row[1]).doubleValue();
+            }
+
+            @Override
+            public String getMetric() {
+                return (String) row[2];
+            }
+        }).toList();
     }
 }

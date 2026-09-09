@@ -5,6 +5,7 @@ import org.springframework.cloud.gateway.filter.ratelimit.RedisRateLimiter;
 import org.springframework.cloud.gateway.filter.ratelimit.KeyResolver;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.reactive.CorsWebFilter;
 import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
@@ -44,6 +45,7 @@ public class GatewayConfig {
     }
 
     @Bean
+    @Primary
     public RedisRateLimiter globalRateLimiter() {
         return new RedisRateLimiter(60, 120, 1);
     }

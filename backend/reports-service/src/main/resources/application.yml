@@ -57,6 +57,8 @@ spring:
     url: jdbc:postgresql://postgres:5432/telemetryhub
     username: telemetryhub
     password: telemetryhub-dev
+  liquibase:
+    default-schema: reports
 ---
 spring:
   config:

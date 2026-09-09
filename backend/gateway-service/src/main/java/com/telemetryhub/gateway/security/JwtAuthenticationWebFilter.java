@@ -26,8 +26,13 @@ public class JwtAuthenticationWebFilter implements WebFilter {
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
         String path = exchange.getRequest().getPath().value();
-        if (path.startsWith("/actuator") || path.equals("/api/v1/auth/refresh")
-                || "OPTIONS".equalsIgnoreCase(exchange.getRequest().getMethod().name())) {
+        boolean isPublic = path.startsWith("/actuator")
+                || path.equals("/api/v1/auth/register-tenant")
+                || path.equals("/api/v1/auth/login")
+                || path.equals("/api/v1/auth/refresh")
+                || path.startsWith("/api/v1/auth/invitation/")
+                || "OPTIONS".equalsIgnoreCase(exchange.getRequest().getMethod().name());
+        if (isPublic) {
             return chain.filter(exchange);
         }
 

@@ -5,6 +5,7 @@ import logging
 import os
 import random
 import time
+from uuid import UUID
 
 from app.publisher import TelemetryPublisher
 from app.signal import DEFAULT_METRICS, generate_batch
@@ -37,7 +38,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
 
 def build_equipment_ids(count: int, rng: random.Random) -> list[str]:
-    return [f"eq-{i:04d}-{rng.randint(1000, 9999)}" for i in range(count)]
+    return [str(UUID(int=rng.getrandbits(128))) for _ in range(count)]
 
 
 def run(args: argparse.Namespace) -> int:

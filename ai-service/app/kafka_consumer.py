@@ -43,6 +43,15 @@ class AnomalyStreamConsumer:
             self._thread.join(timeout=2)
 
     def _run(self) -> None:
+        while not self._stop.is_set():
+            try:
+                self._consume()
+            except Exception:
+                logger.warning("Consommateur Kafka interrompu, nouvelle tentative dans 5s", exc_info=True)
+                if self._stop.wait(5):
+                    return
+
+    def _consume(self) -> None:
         consumer = KafkaConsumer(
             settings.raw_topic,
             bootstrap_servers=settings.kafka_bootstrap_servers,

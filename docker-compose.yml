@@ -19,13 +19,15 @@ services:
       test: ["CMD-SHELL", "pg_isready -U telemetryhub -d telemetryhub"]
       interval: 10s
       timeout: 5s
-      retries: 10
+      retries: 15
+      start_period: 90s
 
   kafka:
     image: apache/kafka:3.8.0
     container_name: th-kafka
     restart: unless-stopped
     hostname: kafka
+    user: "0"
     environment:
       KAFKA_NODE_ID: 1
       KAFKA_PROCESS_ROLES: broker,controller
@@ -49,22 +51,24 @@ services:
     volumes:
       - kafka-data:/tmp/kraft-combined-logs
     healthcheck:
-      test: ["CMD-SHELL", "kafka-topics.sh --bootstrap-server localhost:9092 --list > /dev/null 2>&1"]
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list > /dev/null 2>&1"]
       interval: 15s
       timeout: 10s
-      retries: 10
+      retries: 20
+      start_period: 90s
 
   init-topics:
     image: apache/kafka:3.8.0
     container_name: th-init-topics
+    user: "0"
     depends_on:
       kafka:
         condition: service_healthy
     entrypoint: >
       /bin/sh -c "
-      kafka-topics.sh --bootstrap-server kafka:9092 --create --if-not-exists --topic telemetry.raw --partitions 12 --replication-factor 1;
-      kafka-topics.sh --bootstrap-server kafka:9092 --create --if-not-exists --topic telemetry.anomaly --partitions 6 --replication-factor 1;
-      kafka-topics.sh --bootstrap-server kafka:9092 --create --if-not-exists --topic telemetry.alerts --partitions 6 --replication-factor 1;
+      /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --create --if-not-exists --topic telemetry.raw --partitions 12 --replication-factor 1;
+      /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --create --if-not-exists --topic telemetry.anomaly --partitions 6 --replication-factor 1;
+      /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --create --if-not-exists --topic telemetry.alerts --partitions 6 --replication-factor 1;
       echo 'Topics created';
       exit 0;
       "
@@ -178,8 +182,15 @@ services:
       dockerfile: Dockerfile
     container_name: th-ai-service
     restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql+psycopg2://telemetryhub:telemetryhub-dev@postgres:5432/telemetryhub
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      KAFKA_RAW_TOPIC: telemetry.raw
+      KAFKA_ANOMALY_TOPIC: telemetry.anomaly
     depends_on:
       postgres:
+        condition: service_healthy
+      kafka:
         condition: service_healthy
     ports:
       - "8090:8090"
@@ -190,10 +201,13 @@ services:
       dockerfile: Dockerfile
     container_name: th-simulator
     restart: unless-stopped
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      KAFKA_RAW_TOPIC: telemetry.raw
+      SIM_TENANT_ID: ff048b7c-cfef-41ee-9f38-ebfd6b1a97cc
     depends_on:
       kafka:
         condition: service_healthy
-    command: ["python", "-m", "app.main"]
 
   frontend:
     build:

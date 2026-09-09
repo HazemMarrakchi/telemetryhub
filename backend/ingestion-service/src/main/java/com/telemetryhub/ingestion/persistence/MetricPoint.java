@@ -1,11 +1,12 @@
 package com.telemetryhub.ingestion.persistence;
 
 import java.time.Instant;
-import java.util.UUID;
 
-public record MetricPoint(
-        Instant timestamp,
-        double value,
-        String metric
-) {
+public interface MetricPoint {
+
+    Instant getTimestamp();
+
+    double getValue();
+
+    String getMetric();
 }

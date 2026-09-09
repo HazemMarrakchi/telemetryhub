@@ -7,6 +7,8 @@ import com.telemetryhub.reports.persistence.ReportRepository;
 import com.telemetryhub.reports.persistence.ReportRow;
 import com.telemetryhub.reports.persistence.TelemetryReadingsAccess;
 import com.telemetryhub.reports.security.TenantContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -30,6 +32,8 @@ public class ReportGenerationService {
             DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss").withZone(ZoneOffset.UTC);
     private static final int BUCKET_SECONDS = 300;
     private static final int RETENTION_DAYS = 30;
+
+    private static final Logger log = LoggerFactory.getLogger(ReportGenerationService.class);
 
     private final ReportRepository reportRepository;
     private final TelemetryReadingsAccess readingsAccess;
@@ -63,6 +67,7 @@ public class ReportGenerationService {
         try {
             build(report);
         } catch (Exception ex) {
+            log.error("Échec de génération du rapport {}", report.getId(), ex);
             report.markFailed(ex.getMessage());
         }
         return reportRepository.save(report);
