@@ -1,0 +1,32 @@
+name: Lockfile (Linux)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  regenerate:
+    name: Regenerate package-lock on Linux
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Regenerate lockfile for Linux platform
+        working-directory: frontend
+        run: |
+          rm -f package-lock.json
+          npm install --no-audit --no-fund
+      - name: Commit updated lockfile back
+        run: |
+          git config user.name 'telemetryhub-bot'
+          git config user.email 'actions@github.com'
+          git add frontend/package-lock.json
+          if git diff --cached --quiet; then echo 'no lock changes'; exit 0; fi
+          git commit -m 'chore(frontend): regenerate package-lock.json on Linux [skip ci]'
+          git push
