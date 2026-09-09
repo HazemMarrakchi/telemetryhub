@@ -57,7 +57,8 @@ databaseChangeLog:
             tableName: equipment_models
             indexName: idx_eq_models_tenant
             columns:
-              - tenant_id
+              - column:
+                  name: tenant_id
         - createTable:
             schemaName: fleet
             tableName: sites
@@ -115,7 +116,8 @@ databaseChangeLog:
             tableName: sites
             indexName: idx_sites_tenant
             columns:
-              - tenant_id
+              - column:
+                  name: tenant_id
         - createTable:
             schemaName: fleet
             tableName: equipments
@@ -189,22 +191,26 @@ databaseChangeLog:
             tableName: equipments
             indexName: idx_equipments_tenant
             columns:
-              - tenant_id
+              - column:
+                  name: tenant_id
         - createIndex:
             schemaName: fleet
             tableName: equipments
             indexName: idx_equipments_status
             columns:
-              - status
+              - column:
+                  name: status
         - createIndex:
             schemaName: fleet
             tableName: equipments
             indexName: idx_equipments_site
             columns:
-              - site_id
+              - column:
+                  name: site_id
         - createIndex:
             schemaName: fleet
             tableName: equipments
             indexName: idx_equipments_next_maintenance
             columns:
-              - next_maintenance_at
+              - column:
+                  name: next_maintenance_at
