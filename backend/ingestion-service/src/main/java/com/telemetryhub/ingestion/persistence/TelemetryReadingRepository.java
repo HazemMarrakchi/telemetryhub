@@ -51,6 +51,23 @@ public interface TelemetryReadingRepository extends JpaRepository<TelemetryReadi
                                      @Param("to") Instant to);
 
     @Query(value = """
+            SELECT time_bucket(:bucket, recorded_at) AS timestamp,
+                   avg(value) AS value,
+                   metric
+            FROM metrics.telemetry_readings
+            WHERE tenant_id = :tenantId
+              AND equipment_id = :equipmentId
+              AND recorded_at BETWEEN :from AND :to
+            GROUP BY time_bucket(:bucket, recorded_at), metric
+            ORDER BY timestamp ASC
+            """, nativeQuery = true)
+    List<MetricPoint> findAggregatedByEquipment(@Param("tenantId") UUID tenantId,
+                                                @Param("equipmentId") UUID equipmentId,
+                                                @Param("bucket") String bucket,
+                                                @Param("from") Instant from,
+                                                @Param("to") Instant to);
+
+    @Query(value = """
             SELECT time_bucket('5 minutes', recorded_at) AS timestamp,
                    avg(value) AS value,
                    metric
