@@ -4,6 +4,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { AlertingApi } from '../core/services/alerting-api';
+import { FleetApi } from '../core/services/fleet-api';
 import { AlertEvent } from '../core/models';
 
 @Component({
@@ -49,13 +50,14 @@ import { AlertEvent } from '../core/models';
       <h3>Événements</h3>
       <table>
         <thead>
-          <tr><th>Règle</th><th>Métrique</th><th>Valeur / seuil</th><th>Sévérité</th><th>Statut</th><th>Horodatage</th><th></th></tr>
+          <tr><th>Règle</th><th>Métrique</th><th>Valeur / seuil</th><th>Machine</th><th>Sévérité</th><th>Statut</th><th>Horodatage</th><th></th></tr>
         </thead>
         <tbody>
           <tr *ngFor="let alert of alerts()">
             <td>{{ alert.ruleName }}</td>
             <td class="muted">{{ alert.metric }}</td>
             <td>{{ alert.value | number: '1.1-1' }} / {{ alert.threshold }}</td>
+            <td>{{ equipmentName(alert.equipmentId) }}</td>
             <td><span class="badge" [ngClass]="severityClass(alert.severity)">{{ alert.severity }}</span></td>
             <td><span class="badge" [ngClass]="statusClass(alert.status)">{{ alert.status }}</span></td>
             <td class="muted">{{ alert.triggeredAt | date: 'dd/MM HH:mm:ss' }}</td>
@@ -76,6 +78,7 @@ import { AlertEvent } from '../core/models';
 })
 export class AlertsComponent implements OnInit {
   private api = inject(AlertingApi);
+  private fleetApi = inject(FleetApi);
   private fb = inject(FormBuilder);
   private destroyRef = inject(DestroyRef);
 
@@ -89,6 +92,7 @@ export class AlertsComponent implements OnInit {
 
   alerts = signal<AlertEvent[]>([]);
   rules = signal<{ id: string; name: string; metric: string; operator: string; threshold: number; enabled: boolean }[]>([]);
+  private equipmentNames = new Map<string, string>();
 
   ngOnInit(): void {
     this.load();
@@ -101,6 +105,19 @@ export class AlertsComponent implements OnInit {
     this.api.rules().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (rules) => this.rules.set(rules),
     });
+    this.fleetApi.equipment(0, 100).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (page) => {
+        const map = new Map<string, string>();
+        for (const eq of page.content) {
+          map.set(eq.id, eq.name);
+        }
+        this.equipmentNames = map;
+      },
+    });
+  }
+
+  equipmentName(id: string): string {
+    return id ? this.equipmentNames.get(id) ?? '—' : 'Tous les équipements';
   }
 
   createRule(): void {
