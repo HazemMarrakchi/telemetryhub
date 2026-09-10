@@ -88,10 +88,10 @@ export class FleetComponent implements OnInit {
 
   private refreshLookups(): void {
     this.api.sites().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (page) => this.sites.set(page.content),
+      next: (page) => this.sites.set(dedupeByName(page.content)),
     });
     this.api.models().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (page) => this.models.set(page.content),
+      next: (page) => this.models.set(dedupeByName(page.content)),
     });
   }
 
@@ -125,4 +125,16 @@ export class FleetComponent implements OnInit {
 
 function message(error: { error?: { message?: string } }): string {
   return error.error?.message ?? "Une erreur est survenue";
+}
+
+function dedupeByName<T extends { name: string }>(items: T[]): T[] {
+  const seen = new Set<string>();
+  return items.filter((item) => {
+    const key = item.name.trim().toLowerCase();
+    if (seen.has(key)) {
+      return false;
+    }
+    seen.add(key);
+    return true;
+  });
 }
