@@ -1,6 +1,7 @@
 import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormsModule } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { MaintenanceApi } from '../core/services/maintenance-api';
@@ -12,7 +13,7 @@ import { Equipment } from '../core/models';
 @Component({
   selector: 'th-maintenance',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule],
   template: `
     <h1 class="page-title">Maintenance</h1>
     <p class="muted">Ordres de travail CMMS : les alarmes critiques créent automatiquement une intervention et ouvrent un temps d'arrêt.</p>
@@ -88,11 +89,13 @@ import { Equipment } from '../core/models';
               <span class="badge danger" *ngIf="wo.overdue">retard</span>
             </td>
             <td>
-              <select [value]="wo.assignedToUserId || ''" (change)="assign(wo, $event)"
-                      [disabled]="isClosed(wo.status)" class="small">
+              <select *ngIf="!wo.assignedToUserId && !isClosed(wo.status)"
+                      [ngModel]="''" (ngModelChange)="assign(wo, $event)" class="small">
                 <option value="">—</option>
                 <option *ngFor="let u of users()" [value]="u.id">{{ u.fullName }}</option>
               </select>
+              <span *ngIf="wo.assignedToUserId" class="badge success">✔ {{ userName(wo.assignedToUserId) }}</span>
+              <span *ngIf="isClosed(wo.status) && !wo.assignedToUserId" class="muted">—</span>
             </td>
             <td class="muted">{{ wo.dueAt ? (wo.dueAt | date: 'dd/MM HH:mm') : '—' }}</td>
             <td>
@@ -208,12 +211,19 @@ export class MaintenanceComponent implements OnInit {
     });
   }
 
-  assign(wo: WorkOrder, event: Event): void {
-    const technicianId = (event.target as HTMLSelectElement).value;
+  assign(wo: WorkOrder, technicianId: string): void {
     if (!technicianId) {
       return;
     }
     this.api.assignWorkOrder(wo.id, technicianId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => this.load());
+  }
+
+  userName(id: string | null): string {
+    if (!id) {
+      return '—';
+    }
+    const user = this.users().find((u) => u.id === id);
+    return user ? user.fullName : id.slice(0, 8);
   }
 
   startWo(id: string): void {
