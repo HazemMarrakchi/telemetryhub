@@ -34,7 +34,7 @@ import { selectAuthError, selectAuthLoading } from './store/auth.selectors';
           </button>
         </form>
         <p class="hint muted mt">
-          Compte démo: <code>admin&#64;acme.com</code> / <code>Demo&#64;2026</code>
+          Compte démo: <code>admin&#64;acme.com</code> / <code>Demo&#64;2026!</code>
         </p>
       </div>
     </div>
