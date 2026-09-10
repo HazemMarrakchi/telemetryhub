@@ -4,11 +4,11 @@ Plateforme **SaaS multi-tenant de supervision d'équipements industriels** (IoT 
 d'une télémétrie continue, alerting à chaud, détection d'anomalies statistique, rapports PDF/CSV et
 assistant IA ancré sur une base de connaissances (RAG).
 
-Construit comme un projet personnel « production-ready » : 6 microservices Java/Spring Boot, streaming
+Construit comme un projet personnel « production-ready » : 7 microservices Java/Spring Boot, streaming
 Kafka, TimescaleDB, frontend Angular 18, monitoring Prometheus/Grafana/Loki, déploiement Kubernetes
 (Helm) + infrastructure Terraform (GCP), et pipeline CI/CD GitHub Actions complet.
 
-> 🏭 **Démo** : console web sur `http://localhost:4200` — compte `admin@acme.com` / `Demo@2026`.
+> 🏭 **Démo** : console web sur `http://localhost:4200` — compte `admin@acme.com` / `Demo@2026!`.
 > Le service `simulator` produit un flux métrique réaliste en continu pour alimenter le dashboard.
 
 [![CI](https://github.com/HazemMarrakchi/telemetryhub/actions/workflows/ci.yml/badge.svg)](https://github.com/HazemMarrakchi/telemetryhub/actions/workflows/ci.yml)
@@ -22,7 +22,7 @@ Kafka, TimescaleDB, frontend Angular 18, monitoring Prometheus/Grafana/Loki, dé
 ```
             ┌──────────────────────────────────────────────────────────────┐
             │                     Frontend Angular 18                       │
-            │             (dashboard, parc, alertes, rapports, IA)          │
+            │     (dashboard, parc, alertes, maintenance, rapports, IA)     │
             └───────────────────────────────┬──────────────────────────────┘
                                             │ HTTPS /api
                        ┌────────────────────▼────────────────────┐
@@ -34,6 +34,11 @@ Kafka, TimescaleDB, frontend Angular 18, monitoring Prometheus/Grafana/Loki, dé
              │ auth-service 8081│  │ fleet 8082     │  │ reports 8085       │
              │ tenants + JWT    │  │ parc           │  │ PDF / CSV / TTL    │
              └──────────────────┘  └───────────────┘  └────────────────────┘
+             ┌───────────────▼──┐                                     ┌─────▼──────────────┐
+             │ maintenance 8086 │ ──── Kafka telemetry.alerts ───────▶ │ alerting (8084)     │
+             │ CMMS (ordres de  │ ←─────────────────────────────────── │ seuils + rules       │
+             │ travaux, arrêts) │                                     └────────────────────┘
+             └──────────────────┘
   simulator ──▶ Kafka ──▶ ingestion (8083) ──▶ TimescaleDB ──▶ ingestion
   (Python)     telemetry.raw     └──▶ alerting (8084) ──▶ telemetry.alerts
                           ai-service (8090)  Z-Score + RAG (pgvector)
@@ -48,6 +53,21 @@ Kafka, TimescaleDB, frontend Angular 18, monitoring Prometheus/Grafana/Loki, dé
 4. `ai-service` applique une **détection Z-Score** sur la fenêtre glissante, stocke les anomalies
    (schéma `ai`), et sert un **assistant RAG** sur la base de connaissances (`ai.documents`,
    recherche cosinus `pgvector`).
+5. `maintenance-service` (CMMS) consomme `telemetry.alerts` : une alerte `CRITICAL/FATAL` ouvre un
+   **ordre de travail** et un **temps d'arrêt** ; au passage à `RESOLVED` l'arrêt se referme
+   automatiquement (boucle fermée alerting → maintenance).
+
+## Maintenance (CMMS)
+
+Module de maintenance préventive et corrective intégré au flux d'alertes :
+
+- **Ordres de travail** : création manuelle ou automatique depuis une alerte critique (`source=ALERT`),
+  cycle *Assigner → Démarrer → Terminer / Annuler*, types d'intervention `PREVENTIVE | CORRECTIVE | INSPECTION`,
+  priorité, échéance, notes de clôture, pièces et coût estimé.
+- **Temps d'arrêt & OEE** : ouverture/fermeture automatique depuis les alertes, disponibilité machine,
+  simplicité globale `GET /v1/downtime/oee` (disponibilité 24 h, arrêts fusionnés, taux de clôture).
+- **Page Maintenance** (front) : KPI temps réel, cards OEE, formulaire de création, liste filtrable,
+  assignation aux techniciens, transitions et notes de clôture.
 
 ## Stack technique
 
@@ -55,7 +75,7 @@ Kafka, TimescaleDB, frontend Angular 18, monitoring Prometheus/Grafana/Loki, dé
 | --- | --- |
 | Backend | Java 21, Spring Boot 3.3.5, Spring Cloud Gateway 2023.0.3, Spring Security + JWT (auth0) |
 | Streaming | Apache Kafka 3.8 (KRaft), topology topics `telemetry.raw` / `telemetry.anomaly` / `telemetry.alerts` |
-| Stockage | TimescaleDB (hypertables + compression) multi-schémas `tenant`, `fleet`, `metrics`, `alerts`, `reports`, `ai` |
+| Stockage | TimescaleDB (hypertables + compression) multi-schémas `tenant`, `fleet`, `metrics`, `alerts`, `reports`, `maintenance`, `ai` |
 | Cache / rate-limit | Redis 7 |
 | IA | FastAPI, détection Z-Score, embeddings hashing 128‑d, RAG pgvector (réponses sourcées) |
 | Frontend | Angular 18, NGRX, RxJS, (lazy-loading par fiche) |
@@ -75,9 +95,9 @@ docker compose up -d --build
 
 | Service | URL | Notes |
 | --- | --- | --- |
-| Console web | http://localhost:4200 | `admin@acme.com` / `Demo@2026` |
+| Console web | http://localhost:4200 | `admin@acme.com` / `Demo@2026!` |
 | Gateway (API) | http://localhost:8080 | routes `/api/v1/*` vers les services |
-| Auth | 8081 · Parc 8082 · Ingestion 8083 · Alerting 8084 · Rapports 8085 | |
+| Auth | 8081 · Parc 8082 · Ingestion 8083 · Alerting 8084 · Rapports 8085 · Maintenance (CMMS) 8086 | |
 | AI | http://localhost:8090 | `/api/v1/ai/*`, `/api/v1/assistant/*` |
 | Kafka | 9092 | topics auto-créés par `init-topics` |
 | TimescaleDB | 5432 · Redis 6379 | |
@@ -145,7 +165,7 @@ Le pipeline `.github/workflows/ci.yml` rejoue l'ensemble sur chaque push (`main`
 
 ```
 telemetryhub/
-├─ backend/            # 6 services Spring Boot (multi-module Maven) + initdb
+├─ backend/            # 7 services Spring Boot (multi-module Maven) + initdb
 ├─ frontend/           # Console Angular 18
 ├─ simulator/          # Simulateur de flux IoT (Python)
 ├─ ai-service/         # Anomalies Z-Score + assistant RAG (FastAPI)
@@ -163,3 +183,4 @@ telemetryhub/
 - [ ] WebSocket temps réel sur le dashboard (StockBinance-style updates)
 - [ ] Export direct datasource TimescaleDB depuis Grafana
 - [ ] Capacity planning automatique par métrique (prédiction de pannes)
+- [ ] CMMS : historique des interventions, maintenance préventive planifiée et tendances de coûts
