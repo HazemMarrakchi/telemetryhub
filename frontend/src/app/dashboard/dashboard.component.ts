@@ -28,9 +28,10 @@ const PALETTE = ['#2563eb', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4
       <h1 class="page-title">Tableau de bord</h1>
       <span class="spacer"></span>
       <span class="badge info">Vue: {{ rangeLabel }}</span>
+      <span class="badge ok" *ngIf="lastUpdate()">À jour: {{ lastUpdate() }}</span>
       <button class="secondary" (click)="refresh()">Actualiser</button>
     </div>
-    <p class="muted">Agrégation des métriques sur 15 minutes, dernières 24 heures.</p>
+    <p class="muted">Courbe : moyenne par tranche de 15 minutes sur les dernières 24 heures. Dernières valeurs : mesures instantanées.</p>
 
     <div class="card mt chart-box" *ngIf="series().length">
       <svg [attr.viewBox]="'0 0 ' + width + ' ' + height" preserveAspectRatio="none" class="chart-svg">
@@ -101,11 +102,12 @@ export class DashboardComponent implements OnInit {
   series = signal<Series[]>([]);
   latest = signal<MetricPoint[]>([]);
   loading = signal(true);
+  lastUpdate = signal<string | null>(null);
   private timer?: ReturnType<typeof setInterval>;
 
   ngOnInit(): void {
     this.refresh();
-    this.timer = setInterval(() => this.refresh(), 30_000);
+    this.timer = setInterval(() => this.refresh(), 5_000);
     this.destroyRef.onDestroy(() => {
       if (this.timer) {
         clearInterval(this.timer);
@@ -124,14 +126,18 @@ export class DashboardComponent implements OnInit {
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe({
-        next: (points) => this.scatter(points),
+        next: (points) => {
+          this.scatter(points);
+          this.lastUpdate.set(new Date().toLocaleTimeString('fr-FR'));
+        },
         error: () => this.series.set([]),
       });
+    const recentFrom = new Date(to.getTime() - 2 * 60 * 1000);
     this.api
-      .latest()
+      .raw(recentFrom.toISOString(), to.toISOString())
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (points) => this.latest.set(points.slice(0, 10)),
+        next: (points) => this.latest.set(latestPerMetric(points, 10)),
       });
   }
 
@@ -190,4 +196,17 @@ export class DashboardComponent implements OnInit {
       })),
     );
   }
+}
+
+function latestPerMetric(points: MetricPoint[], limit: number): MetricPoint[] {
+  const byMetric = new Map<string, MetricPoint>();
+  for (const point of points) {
+    const current = byMetric.get(point.metric);
+    if (!current || new Date(point.timestamp) > new Date(current.timestamp)) {
+      byMetric.set(point.metric, point);
+    }
+  }
+  return Array.from(byMetric.values())
+    .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+    .slice(0, limit);
 }
