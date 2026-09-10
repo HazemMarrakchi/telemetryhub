@@ -25,6 +25,10 @@ export const routes: Routes = [
         loadComponent: () => import('./alerts/alerts.component').then((m) => m.AlertsComponent),
       },
       {
+        path: 'maintenance',
+        loadComponent: () => import('./maintenance/maintenance.component').then((m) => m.MaintenanceComponent),
+      },
+      {
         path: 'reports',
         loadComponent: () => import('./reports/reports.component').then((m) => m.ReportsComponent),
       },

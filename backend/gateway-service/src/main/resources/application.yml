@@ -24,8 +24,9 @@ spring:
         - id: auth-service
           uri: http://localhost:8081
           predicates:
-            - Path=/api/v1/auth/**,/api/v1/tenants/**
+            - Path=/api/v1/auth/**,/api/v1/tenants/**,/api/v1/users/**
           filters:
+            - RewritePath=/api/v1/users(?<segment>/?.*), /api/v1/auth/users${segment}
             - name: RequestRateLimiter
               args:
                 redis-rate-limiter.replenishRate: 30
@@ -70,6 +71,16 @@ spring:
               args:
                 redis-rate-limiter.replenishRate: 20
                 redis-rate-limiter.burstCapacity: 40
+                key-resolver: "#{@tenantKeyResolver}"
+        - id: maintenance-service
+          uri: http://localhost:8086
+          predicates:
+            - Path=/api/v1/work-orders/**,/api/v1/downtime/**
+          filters:
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenishRate: 60
+                redis-rate-limiter.burstCapacity: 120
                 key-resolver: "#{@tenantKeyResolver}"
         - id: ai-service
           uri: http://localhost:8090
@@ -121,8 +132,9 @@ spring:
         - id: auth-service
           uri: http://auth-service:8081
           predicates:
-            - Path=/api/v1/auth/**,/api/v1/tenants/**
+            - Path=/api/v1/auth/**,/api/v1/tenants/**,/api/v1/users/**
           filters:
+            - RewritePath=/api/v1/users(?<segment>/?.*), /api/v1/auth/users${segment}
             - name: RequestRateLimiter
               args:
                 redis-rate-limiter.replenishRate: 30
@@ -167,6 +179,16 @@ spring:
               args:
                 redis-rate-limiter.replenishRate: 20
                 redis-rate-limiter.burstCapacity: 40
+                key-resolver: "#{@tenantKeyResolver}"
+        - id: maintenance-service
+          uri: http://maintenance-service:8086
+          predicates:
+            - Path=/api/v1/work-orders/**,/api/v1/downtime/**
+          filters:
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenishRate: 60
+                redis-rate-limiter.burstCapacity: 120
                 key-resolver: "#{@tenantKeyResolver}"
         - id: ai-service
           uri: http://ai-service:8090

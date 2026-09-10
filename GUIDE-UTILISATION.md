@@ -129,6 +129,23 @@ curl "http://localhost:8080/api/v1/assistant/knowledge/stats" -H "Authorization:
 curl "http://localhost:8080/api/v1/ai/anomalies?tenantId=<TENANT_ID>&limit=100" -H "Authorization: Bearer $TOKEN"
 ```
 
+### 3.6 Maintenance (CMMS)
+Module de maintenance préventive et corrective : une **alerte CRITIQUE/FATALE** crée automatiquement un **ordre de travail** (`source=ALERT`) et ouvre un **temps d'arrêt** ; quand l'alerte passe `RESOLVED`, le temps d'arrêt se referme. Vous pouvez aussi créer des ordres manuellement.
+
+- Page **Maintenance** : KPI (nouveaux, en cours, en retard, clôturés, minutes d'arrêt du jour), formulaire de création, liste filtrable (statut), assignation à un technicien, transitions *Assigner → Démarrer → Terminer / Annuler*.
+- Créer un ordre : `POST /v1/work-orders` `{"equipmentId","title","description","priority":"LOW|MEDIUM|HIGH|CRITICAL"}`.
+- Transitions : `POST /v1/work-orders/{id}/assign` (body `assignedToUserId`), `POST .../start`, `POST .../complete`, `POST .../cancel`.
+- KPI : `GET /v1/work-orders/kpi` → `{created, assigned, inProgress, open, overdue, completedToday, completed, downtimeTodayMinutes}`.
+- Disponibilité machine (24 h) : `GET /v1/downtime/equipments/{equipmentId}/availability` → `{uptimeMinutes, downtimeMinutes, availabilityPercent, downtimeCount}`.
+
+```bash
+# Créer un ordre de travail manuel
+curl -X POST http://localhost:8080/api/v1/work-orders -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" -d '{"equipmentId":"<EQUIPMENT_ID>","title":"Remplacement roulement","priority":"HIGH"}'
+```
+
+> Un ordre automatique apparaît peu après une alerte `CRITICAL` : son titre est « Ordre automatique : <nom de la règle> », la disponibilité de la machine passe sous 100 % pendant l'arrêt.
+
 ---
 
 ## 4. Envoyer des données (ingestion)

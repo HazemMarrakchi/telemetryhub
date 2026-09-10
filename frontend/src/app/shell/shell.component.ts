@@ -23,6 +23,7 @@ import { selectUser } from '../auth/store/auth.selectors';
           </a>
           <a routerLink="/fleet" routerLinkActive="active">Parc & équipements</a>
           <a routerLink="/alerts" routerLinkActive="active">Alertes</a>
+          <a routerLink="/maintenance" routerLinkActive="active">Maintenance</a>
           <a routerLink="/reports" routerLinkActive="active">Rapports</a>
           <a routerLink="/assistant" routerLinkActive="active">Assistant IA</a>
         </nav>

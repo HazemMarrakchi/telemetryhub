@@ -21,6 +21,7 @@
     <modules>
         <module>auth-service</module>
         <module>fleet-service</module>
+        <module>maintenance-service</module>
         <module>ingestion-service</module>
         <module>alerting-service</module>
         <module>reports-service</module>

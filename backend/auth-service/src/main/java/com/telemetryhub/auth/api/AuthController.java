@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -66,6 +67,11 @@ public class AuthController {
         UUID userId = currentUserId(authentication);
         authService.revokeAllSessions(userId);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/users")
+    public ResponseEntity<List<AuthService.UserDto>> listUsers(Authentication authentication) {
+        return ResponseEntity.ok(authService.listUsers(currentTenantId(authentication)));
     }
 
     @PostMapping("/invite")

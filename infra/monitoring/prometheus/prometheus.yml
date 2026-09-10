@@ -33,6 +33,12 @@ scrape_configs:
       - targets: ["reports-service:8085"]
         labels:
           service: reports-service
+  - job_name: "telemetryhub-maintenance"
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ["maintenance-service:8086"]
+        labels:
+          service: maintenance-service
   - job_name: "telemetryhub-gateway"
     metrics_path: /actuator/prometheus
     static_configs:

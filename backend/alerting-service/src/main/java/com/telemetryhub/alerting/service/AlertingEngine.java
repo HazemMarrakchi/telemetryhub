@@ -88,6 +88,7 @@ public class AlertingEngine {
                         "Alerte introuvable: " + alertId));
         alert.acknowledge(userId);
         eventRepository.save(alert);
+        producer.publish(alert);
     }
 
     public void resolve(UUID alertId, UUID tenantId) {
@@ -100,6 +101,7 @@ public class AlertingEngine {
         }
         alert.setStatus(com.telemetryhub.alerting.domain.AlertStatus.RESOLVED);
         eventRepository.save(alert);
+        producer.publish(alert);
     }
 
     public void updateRuleEnabled(UUID ruleId, UUID tenantId, boolean enabled) {

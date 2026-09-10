@@ -85,6 +85,22 @@ services:
       requests:
         cpu: 100m
         memory: 256Mi
+  - name: maintenance-service
+    image: telemetryhub/telemetryhub-maintenance:latest
+    port: 8086
+    replicas: 1
+    env:
+      SPRING_PROFILES_ACTIVE: k8s
+      TH_JWT_SECRET: TELEMETRYHUB_DEV_SECRET_KEY_CHANGE_ME_IN_PRODUCTION_0123456789
+      TH_JWT_ISSUER: telemetryhub-auth
+      KAFKA_BOOTSTRAP: telemetryhub-kafka:9092
+    resources:
+      limits:
+        cpu: 500m
+        memory: 512Mi
+      requests:
+        cpu: 100m
+        memory: 256Mi
   - name: reports-service
     image: telemetryhub/telemetryhub-reports:latest
     port: 8085

@@ -1,0 +1,40 @@
+package com.telemetryhub.maintenance.api;
+
+import com.telemetryhub.maintenance.domain.WorkOrder;
+import com.telemetryhub.maintenance.domain.WorkOrderPriority;
+import com.telemetryhub.maintenance.domain.WorkOrderSource;
+import com.telemetryhub.maintenance.domain.WorkOrderStatus;
+
+import java.time.Instant;
+import java.util.UUID;
+
+public record WorkOrderView(
+        UUID id,
+        UUID equipmentId,
+        String title,
+        String description,
+        WorkOrderPriority priority,
+        WorkOrderStatus status,
+        WorkOrderSource source,
+        UUID assignedToUserId,
+        UUID alertId,
+        Instant dueAt,
+        Instant startedAt,
+        Instant completedAt,
+        Instant createdAt,
+        Instant updatedAt,
+        boolean overdue
+) {
+    public static WorkOrderView from(WorkOrder order) {
+        boolean overdue = order.getDueAt() != null
+                && order.getStatus() != WorkOrderStatus.COMPLETED
+                && order.getStatus() != WorkOrderStatus.CANCELLED
+                && order.getDueAt().isBefore(Instant.now());
+        return new WorkOrderView(
+                order.getId(), order.getEquipmentId(), order.getTitle(), order.getDescription(),
+                order.getPriority(), order.getStatus(), order.getSource(),
+                order.getAssignedToUserId(), order.getAlertId(), order.getDueAt(),
+                order.getStartedAt(), order.getCompletedAt(), order.getCreatedAt(),
+                order.getUpdatedAt(), overdue);
+    }
+}
