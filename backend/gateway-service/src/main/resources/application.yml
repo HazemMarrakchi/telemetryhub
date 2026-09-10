@@ -3,6 +3,23 @@ spring:
     name: gateway-service
   cloud:
     gateway:
+      globalcors:
+        add-to-simple-url-handler-mapping: true
+        cors-configurations:
+          '[/**]':
+            allowed-origins:
+              - http://localhost:4200
+            allowed-methods:
+              - GET
+              - POST
+              - PUT
+              - PATCH
+              - DELETE
+              - OPTIONS
+            allowed-headers: "*"
+            exposed-headers: "Content-Disposition"
+            allow-credentials: true
+            max-age: 3600
       routes:
         - id: auth-service
           uri: http://localhost:8081

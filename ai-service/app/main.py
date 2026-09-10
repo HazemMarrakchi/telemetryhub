@@ -5,7 +5,6 @@ from contextlib import asynccontextmanager
 from typing import Annotated
 
 from fastapi import FastAPI, HTTPException, Query
-from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from app.anomaly import ZScoreDetector
@@ -44,14 +43,6 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="TelemetryHub AI Service", version="1.0.0", lifespan=lifespan)
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=settings.allowed_origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 
 class ReadingPayload(BaseModel):
