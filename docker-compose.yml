@@ -205,6 +205,10 @@ services:
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       KAFKA_RAW_TOPIC: telemetry.raw
       SIM_TENANT_ID: ff048b7c-cfef-41ee-9f38-ebfd6b1a97cc
+      SIM_EQUIPMENT_IDS: >-
+        a35827bf-19ba-4e17-9016-ca02d6b0e3c6,6d70e924-2745-40cb-82a2-ecad566f6d22,
+        297e7e90-fce7-43d2-b1ae-019f2647e461,1702e30f-1e12-4f44-9b55-1a87bcec0c70,
+        a97a6f91-7685-4ab8-900c-f72dcd3674ba,b5908afc-efaa-4f3b-ba9d-48a14d99c8f9
     depends_on:
       kafka:
         condition: service_healthy

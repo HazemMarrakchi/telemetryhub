@@ -26,6 +26,9 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--tenant", default=os.environ.get("SIM_TENANT_ID", "11111111-1111-1111-1111-111111111111"))
     parser.add_argument("--equipment-count", type=int,
                         default=int(os.environ.get("SIM_EQUIPMENT_COUNT", "12")))
+    parser.add_argument("--equipment-ids",
+                        default=os.environ.get("SIM_EQUIPMENT_IDS", ""),
+                        help="Liste d'ids d'equipements separes par des virgules (remplace le mode aleatoire)")
     parser.add_argument("--interval-seconds", type=float,
                         default=float(os.environ.get("SIM_INTERVAL_SECONDS", "5.0")))
     parser.add_argument("--anomaly-rate", type=float,
@@ -43,13 +46,16 @@ def build_equipment_ids(count: int, rng: random.Random) -> list[str]:
 
 def run(args: argparse.Namespace) -> int:
     rng = random.Random(args.seed)
-    equipment_ids = build_equipment_ids(args.equipment_count, rng)
+    configured_ids = [i.strip() for i in args.equipment_ids.split(",") if i.strip()]
+    if configured_ids:
+        equipment_ids = configured_ids
+        logger.info("Simulation demarree sur %d equipements configures, intervalle %.1fs, topic=%s, tenant=%s",
+                    len(equipment_ids), args.interval_seconds, args.topic, args.tenant)
+    else:
+        equipment_ids = build_equipment_ids(args.equipment_count, rng)
+        logger.info("Simulation demarree: %d equipements aleatoires, intervalle %.1fs, topic=%s, tenant=%s",
+                    len(equipment_ids), args.interval_seconds, args.topic, args.tenant)
     publisher = TelemetryPublisher(args.bootstrap_servers, args.topic)
-
-    logger.info(
-        "Simulation demarree: %d equipements, intervalle %.1fs, topic=%s, tenant=%s",
-        len(equipment_ids), args.interval_seconds, args.topic, args.tenant,
-    )
 
     try:
         while True:
