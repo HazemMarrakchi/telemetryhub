@@ -7,8 +7,8 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MaintenanceApi } from '../core/services/maintenance-api';
 import { FleetApi } from '../core/services/fleet-api';
 import { UsersApi } from '../core/services/users-api';
-import { MaintenanceKpi, UserSummary, WorkOrder, WorkOrderPriority, WorkOrderStatus } from '../core/models';
-import { Equipment } from '../core/models';
+import { MaintenanceKpi, UserSummary, WorkOrder, WorkOrderPriority, WorkOrderStatus, WorkOrderType } from '../core/models';
+import { Equipment, GlobalOee } from '../core/models';
 
 @Component({
   selector: 'th-maintenance',
@@ -41,6 +41,21 @@ import { Equipment } from '../core/models';
       </div>
     </div>
 
+    <div class="kpi-grid" *ngIf="oee()">
+      <div class="card kpi">
+        <strong>{{ oee()!.availabilityPercent }}%</strong>
+        <span>Disponibilité (24 h)</span>
+      </div>
+      <div class="card kpi">
+        <strong>{{ oee()!.downtimeMinutes }}'</strong>
+        <span>Arrêts (24 h, {{ oee()!.downtimeCount }})</span>
+      </div>
+      <div class="card kpi">
+        <strong>{{ oee()!.completionRatePercent }}%</strong>
+        <span>Taux de clôture ({{ oee()!.completedOrders }}/{{ oee()!.createdOrders }})</span>
+      </div>
+    </div>
+
     <div class="panel">
       <h3>Créer un ordre de travail</h3>
       <form [formGroup]="form" (ngSubmit)="create()">
@@ -52,6 +67,9 @@ import { Equipment } from '../core/models';
           </select>
           <select formControlName="priority">
             <option *ngFor="let p of priorities" [value]="p">{{ p }}</option>
+          </select>
+          <select formControlName="workType">
+            <option *ngFor="let t of workTypes" [value]="t">{{ t }}</option>
           </select>
           <input formControlName="dueAt" type="datetime-local" />
         </div>
@@ -73,7 +91,7 @@ import { Equipment } from '../core/models';
     <div class="card">
       <table>
         <thead>
-          <tr><th>Ordre</th><th>Machine</th><th>Priorité</th><th>Statut</th><th>Technicien</th><th>Échéance</th><th>Actions</th></tr>
+          <tr><th>Ordre</th><th>Machine</th><th>Type</th><th>Priorité</th><th>Statut</th><th>Technicien</th><th>Échéance</th><th>Actions</th></tr>
         </thead>
         <tbody>
           <tr *ngFor="let wo of orders()">
@@ -83,6 +101,7 @@ import { Equipment } from '../core/models';
               <div class="muted small">{{ wo.description || '—' }}</div>
             </td>
             <td>{{ equipmentName(wo.equipmentId) }}</td>
+            <td><span class="badge" [ngClass]="typeClass(wo.workType)">{{ wo.workType }}</span></td>
             <td><span class="badge" [ngClass]="priorityClass(wo.priority)">{{ wo.priority }}</span></td>
             <td>
               <span class="badge" [ngClass]="statusClass(wo.status)">{{ wo.status }}</span>
@@ -99,9 +118,14 @@ import { Equipment } from '../core/models';
             </td>
             <td class="muted">{{ wo.dueAt ? (wo.dueAt | date: 'dd/MM HH:mm') : '—' }}</td>
             <td>
+              <div *ngIf="wo.status === 'IN_PROGRESS'" class="inline">
+                <input [ngModel]="notes()[wo.id] || ''" (ngModelChange)="setNotes(wo.id, $event)"
+                       placeholder="Notes de clôture" class="small notes-input" />
+              </div>
               <button class="secondary" *ngIf="wo.status === 'CREATED' || wo.status === 'ASSIGNED'" (click)="startWo(wo.id)">Démarrer</button>
               <button class="secondary" *ngIf="wo.status === 'IN_PROGRESS'" (click)="completeWo(wo.id)">Terminer</button>
               <button class="secondary" *ngIf="!isClosed(wo.status)" (click)="cancelWo(wo.id)">Annuler</button>
+              <div class="muted small" *ngIf="wo.completionNotes">✓ {{ wo.completionNotes }}</div>
             </td>
           </tr>
         </tbody>
@@ -118,6 +142,8 @@ import { Equipment } from '../core/models';
     .wide-auto { min-width: 220px; }
     select.small { max-width: 160px; }
     .small { font-size: 0.85rem; }
+    .inline { display: flex; gap: 6px; align-items: center; }
+    .notes-input { min-width: 180px; }
   `,
 })
 export class MaintenanceComponent implements OnInit {
@@ -129,11 +155,13 @@ export class MaintenanceComponent implements OnInit {
 
   readonly statuses: WorkOrderStatus[] = ['CREATED', 'ASSIGNED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'];
   readonly priorities: WorkOrderPriority[] = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'];
+  readonly workTypes: WorkOrderType[] = ['PREVENTIVE', 'CORRECTIVE', 'INSPECTION'];
 
   form = this.fb.nonNullable.group({
     title: ['', Validators.required],
     equipmentId: ['', Validators.required],
     priority: ['MEDIUM' as WorkOrderPriority, Validators.required],
+    workType: ['PREVENTIVE' as WorkOrderType, Validators.required],
     description: [''],
     dueAt: [''],
   });
@@ -142,6 +170,8 @@ export class MaintenanceComponent implements OnInit {
   kpi = signal<MaintenanceKpi>({
     created: 0, assigned: 0, inProgress: 0, open: 0, overdue: 0, completedToday: 0, completed: 0, downtimeTodayMinutes: 0,
   });
+  oee = signal<GlobalOee | null>(null);
+  notes = signal<Record<string, string>>({});
   users = signal<UserSummary[]>([]);
   equipments = signal<Equipment[]>([]);
   filterStatus = signal<WorkOrderStatus | ''>('');
@@ -159,6 +189,9 @@ export class MaintenanceComponent implements OnInit {
     });
     this.api.kpi().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (k) => this.kpi.set(k),
+    });
+    this.api.oee().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (o) => this.oee.set(o),
     });
     this.usersApi.users().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (users) => this.users.set(users),
@@ -200,13 +233,14 @@ export class MaintenanceComponent implements OnInit {
       title: value.title,
       equipmentId: value.equipmentId,
       priority: value.priority,
+      workType: value.workType,
       description: value.description || undefined,
     };
     if (value.dueAt) {
       payload['dueAt'] = new Date(value.dueAt as string).toISOString();
     }
     this.api.createWorkOrder(payload).pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
-      this.form.reset({ priority: 'MEDIUM' });
+      this.form.reset({ priority: 'MEDIUM', workType: 'PREVENTIVE' });
       this.load();
     });
   }
@@ -231,7 +265,21 @@ export class MaintenanceComponent implements OnInit {
   }
 
   completeWo(id: string): void {
-    this.api.completeWorkOrder(id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => this.load());
+    this.api.completeWorkOrder(id, this.notes()[id]).pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
+      this.notes.update((n) => {
+        const { [id]: _removed, ...rest } = n;
+        return rest;
+      });
+      this.load();
+    });
+  }
+
+  setNotes(id: string, value: string): void {
+    this.notes.update((n) => ({ ...n, [id]: value }));
+  }
+
+  typeClass(workType: WorkOrderType): string {
+    return workType === 'CORRECTIVE' ? 'danger' : workType === 'PREVENTIVE' ? 'info' : 'warn';
   }
 
   cancelWo(id: string): void {

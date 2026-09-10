@@ -132,11 +132,12 @@ curl "http://localhost:8080/api/v1/ai/anomalies?tenantId=<TENANT_ID>&limit=100" 
 ### 3.6 Maintenance (CMMS)
 Module de maintenance préventive et corrective : une **alerte CRITIQUE/FATALE** crée automatiquement un **ordre de travail** (`source=ALERT`) et ouvre un **temps d'arrêt** ; quand l'alerte passe `RESOLVED`, le temps d'arrêt se referme. Vous pouvez aussi créer des ordres manuellement.
 
-- Page **Maintenance** : KPI (nouveaux, en cours, en retard, clôturés, minutes d'arrêt du jour), formulaire de création, liste filtrable (statut), assignation à un technicien, transitions *Assigner → Démarrer → Terminer / Annuler*.
-- Créer un ordre : `POST /v1/work-orders` `{"equipmentId","title","description","priority":"LOW|MEDIUM|HIGH|CRITICAL"}`.
-- Transitions : `POST /v1/work-orders/{id}/assign` (body `assignedToUserId`), `POST .../start`, `POST .../complete`, `POST .../cancel`.
+- Page **Maintenance** : KPI (nouveaux, en cours, en retard, clôturés, minutes d'arrêt du jour), OEE global sur 24 h (disponibilité, minutes d'arrêt, taux de clôture), formulaire de création (type d'intervention), liste filtrable (statut), assignation à un technicien, transitions *Assigner → Démarrer → Terminer / Annuler* avec notes de clôture optionnelles.
+- Créer un ordre : `POST /v1/work-orders` `{"equipmentId","title","description","priority":"LOW|MEDIUM|HIGH|CRITICAL","workType":"PREVENTIVE|CORRECTIVE|INSPECTION"}`.
+- Transitions : `POST /v1/work-orders/{id}/assign` (body `assignedToUserId`), `POST .../start`, `POST .../complete` (body optionnel `completionNotes`), `POST .../cancel`.
 - KPI : `GET /v1/work-orders/kpi` → `{created, assigned, inProgress, open, overdue, completedToday, completed, downtimeTodayMinutes}`.
 - Disponibilité machine (24 h) : `GET /v1/downtime/equipments/{equipmentId}/availability` → `{uptimeMinutes, downtimeMinutes, availabilityPercent, downtimeCount}`.
+- **OEE global** : `GET /v1/downtime/oee?from=…&to=…` → `{totalMinutes, uptimeMinutes, downtimeMinutes, availabilityPercent, downtimeCount, completedOrders, createdOrders, completionRatePercent}` (les arrêts se chevauchant sont fusionnés).
 
 ```bash
 # Créer un ordre de travail manuel

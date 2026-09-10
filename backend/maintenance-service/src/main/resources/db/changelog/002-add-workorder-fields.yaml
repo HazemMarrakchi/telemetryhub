@@ -1,0 +1,24 @@
+databaseChangeLog:
+  - changeSet:
+      id: 002-add-workorder-fields
+      author: telemetryhub
+      changes:
+        - addColumn:
+            schemaName: maintenance
+            tableName: work_orders
+            columns:
+              - column:
+                  name: work_type
+                  type: VARCHAR(16)
+                  defaultValue: PREVENTIVE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: spare_parts
+                  type: VARCHAR(500)
+              - column:
+                  name: cost_estimate
+                  type: DOUBLE PRECISION
+              - column:
+                  name: completion_notes
+                  type: VARCHAR(2000)

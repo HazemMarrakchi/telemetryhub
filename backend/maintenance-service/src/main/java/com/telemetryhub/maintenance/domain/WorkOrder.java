@@ -46,6 +46,19 @@ public class WorkOrder {
     @Column(nullable = false, length = 16)
     private WorkOrderSource source = WorkOrderSource.MANUAL;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 16)
+    private WorkOrderType workType = WorkOrderType.PREVENTIVE;
+
+    @Column(name = "spare_parts", length = 500)
+    private String spareParts;
+
+    @Column(name = "cost_estimate")
+    private Double costEstimate;
+
+    @Column(name = "completion_notes", length = 2000)
+    private String completionNotes;
+
     @Column(name = "assigned_to_user_id")
     private UUID assignedToUserId;
 
@@ -73,13 +86,15 @@ public class WorkOrder {
     }
 
     public WorkOrder(UUID tenantId, UUID equipmentId, String title, String description,
-                     WorkOrderPriority priority, WorkOrderSource source, UUID alertId, Instant dueAt) {
+                     WorkOrderPriority priority, WorkOrderSource source, WorkOrderType workType,
+                     UUID alertId, Instant dueAt) {
         this.tenantId = tenantId;
         this.equipmentId = equipmentId;
         this.title = title;
         this.description = description;
         this.priority = priority != null ? priority : WorkOrderPriority.MEDIUM;
         this.source = source != null ? source : WorkOrderSource.MANUAL;
+        this.workType = workType != null ? workType : WorkOrderType.PREVENTIVE;
         this.alertId = alertId;
         this.dueAt = dueAt;
     }
@@ -134,6 +149,40 @@ public class WorkOrder {
 
     public WorkOrderSource getSource() {
         return source;
+    }
+
+    public WorkOrderType getWorkType() {
+        return workType;
+    }
+
+    public void setWorkType(WorkOrderType workType) {
+        if (workType != null) {
+            this.workType = workType;
+        }
+    }
+
+    public String getSpareParts() {
+        return spareParts;
+    }
+
+    public void setSpareParts(String spareParts) {
+        this.spareParts = spareParts;
+    }
+
+    public Double getCostEstimate() {
+        return costEstimate;
+    }
+
+    public void setCostEstimate(Double costEstimate) {
+        this.costEstimate = costEstimate;
+    }
+
+    public String getCompletionNotes() {
+        return completionNotes;
+    }
+
+    public void setCompletionNotes(String completionNotes) {
+        this.completionNotes = completionNotes;
     }
 
     public UUID getAssignedToUserId() {

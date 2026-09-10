@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
-import { Availability, MaintenanceKpi, WorkOrder, WorkOrderStatus } from '../models';
+import { Availability, GlobalOee, MaintenanceKpi, WorkOrder, WorkOrderStatus } from '../models';
 import { Page } from './alerting-api';
 
 @Injectable({ providedIn: 'root' })
@@ -25,6 +25,17 @@ export class MaintenanceApi {
     return this.http.get<MaintenanceKpi>(`${environment.apiUrl}/v1/work-orders/kpi`);
   }
 
+  oee(from?: string, to?: string): Observable<GlobalOee> {
+    const params: Record<string, string> = {};
+    if (from) {
+      params['from'] = from;
+    }
+    if (to) {
+      params['to'] = to;
+    }
+    return this.http.get<GlobalOee>(`${environment.apiUrl}/v1/downtime/oee`, { params });
+  }
+
   createWorkOrder(payload: Record<string, unknown>): Observable<WorkOrder> {
     return this.http.post<WorkOrder>(`${environment.apiUrl}/v1/work-orders`, payload);
   }
@@ -37,8 +48,12 @@ export class MaintenanceApi {
     return this.http.post<WorkOrder>(`${environment.apiUrl}/v1/work-orders/${id}/start`, {});
   }
 
-  completeWorkOrder(id: string): Observable<WorkOrder> {
-    return this.http.post<WorkOrder>(`${environment.apiUrl}/v1/work-orders/${id}/complete`, {});
+  completeWorkOrder(id: string, completionNotes?: string): Observable<WorkOrder> {
+    const body: Record<string, unknown> = {};
+    if (completionNotes) {
+      body['completionNotes'] = completionNotes;
+    }
+    return this.http.post<WorkOrder>(`${environment.apiUrl}/v1/work-orders/${id}/complete`, body);
   }
 
   cancelWorkOrder(id: string): Observable<WorkOrder> {

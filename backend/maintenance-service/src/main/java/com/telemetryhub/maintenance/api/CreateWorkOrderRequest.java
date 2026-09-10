@@ -1,6 +1,7 @@
 package com.telemetryhub.maintenance.api;
 
 import com.telemetryhub.maintenance.domain.WorkOrderPriority;
+import com.telemetryhub.maintenance.domain.WorkOrderType;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
@@ -15,6 +16,7 @@ public record CreateWorkOrderRequest(
         @Size(max = 2000, message = "La description ne doit pas dépasser 2000 caractères")
         String description,
         WorkOrderPriority priority,
+        WorkOrderType workType,
         Instant dueAt
 ) {
 }

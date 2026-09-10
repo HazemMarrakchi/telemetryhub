@@ -4,6 +4,7 @@ import com.telemetryhub.maintenance.domain.WorkOrder;
 import com.telemetryhub.maintenance.domain.WorkOrderPriority;
 import com.telemetryhub.maintenance.domain.WorkOrderSource;
 import com.telemetryhub.maintenance.domain.WorkOrderStatus;
+import com.telemetryhub.maintenance.domain.WorkOrderType;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -16,11 +17,15 @@ public record WorkOrderView(
         WorkOrderPriority priority,
         WorkOrderStatus status,
         WorkOrderSource source,
+        WorkOrderType workType,
         UUID assignedToUserId,
         UUID alertId,
         Instant dueAt,
         Instant startedAt,
         Instant completedAt,
+        String spareParts,
+        Double costEstimate,
+        String completionNotes,
         Instant createdAt,
         Instant updatedAt,
         boolean overdue
@@ -32,9 +37,10 @@ public record WorkOrderView(
                 && order.getDueAt().isBefore(Instant.now());
         return new WorkOrderView(
                 order.getId(), order.getEquipmentId(), order.getTitle(), order.getDescription(),
-                order.getPriority(), order.getStatus(), order.getSource(),
+                order.getPriority(), order.getStatus(), order.getSource(), order.getWorkType(),
                 order.getAssignedToUserId(), order.getAlertId(), order.getDueAt(),
-                order.getStartedAt(), order.getCompletedAt(), order.getCreatedAt(),
+                order.getStartedAt(), order.getCompletedAt(), order.getSpareParts(),
+                order.getCostEstimate(), order.getCompletionNotes(), order.getCreatedAt(),
                 order.getUpdatedAt(), overdue);
     }
 }

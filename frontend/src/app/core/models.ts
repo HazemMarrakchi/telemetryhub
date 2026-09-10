@@ -73,6 +73,7 @@ export interface ChatResponse {
 export type WorkOrderStatus = 'CREATED' | 'ASSIGNED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
 export type WorkOrderPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
 export type WorkOrderSource = 'MANUAL' | 'ALERT';
+export type WorkOrderType = 'PREVENTIVE' | 'CORRECTIVE' | 'INSPECTION';
 
 export interface WorkOrder {
   id: string;
@@ -82,11 +83,15 @@ export interface WorkOrder {
   priority: WorkOrderPriority;
   status: WorkOrderStatus;
   source: WorkOrderSource;
+  workType: WorkOrderType;
   assignedToUserId?: string;
   alertId?: string;
   dueAt?: string;
   startedAt?: string;
   completedAt?: string;
+  spareParts?: string;
+  costEstimate?: number;
+  completionNotes?: string;
   createdAt: string;
   updatedAt: string;
   overdue: boolean;
@@ -112,6 +117,19 @@ export interface Availability {
   downtimeMinutes: number;
   availabilityPercent: number;
   downtimeCount: number;
+}
+
+export interface GlobalOee {
+  from: string;
+  to: string;
+  totalMinutes: number;
+  uptimeMinutes: number;
+  downtimeMinutes: number;
+  availabilityPercent: number;
+  downtimeCount: number;
+  completedOrders: number;
+  createdOrders: number;
+  completionRatePercent: number;
 }
 
 export interface UserSummary {

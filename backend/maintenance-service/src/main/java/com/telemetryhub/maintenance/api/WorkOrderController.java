@@ -90,14 +90,26 @@ public class WorkOrderController {
 
     @PostMapping("/work-orders/{id}/complete")
     @PreAuthorize("hasAnyRole('TENANT_ADMIN','OPERATOR')")
-    public ResponseEntity<WorkOrderView> complete(@PathVariable UUID id) {
-        return ResponseEntity.ok(workOrderService.complete(TenantContext.tenantId(), id));
+    public ResponseEntity<WorkOrderView> complete(@PathVariable UUID id,
+                                                  @RequestBody(required = false)
+                                                  CompleteWorkOrderRequest request) {
+        String notes = request != null ? request.completionNotes() : null;
+        return ResponseEntity.ok(workOrderService.complete(TenantContext.tenantId(), id, notes));
     }
 
     @PostMapping("/work-orders/{id}/cancel")
     @PreAuthorize("hasAnyRole('TENANT_ADMIN','OPERATOR')")
     public ResponseEntity<WorkOrderView> cancel(@PathVariable UUID id) {
         return ResponseEntity.ok(workOrderService.cancel(TenantContext.tenantId(), id));
+    }
+
+    @GetMapping("/downtime/oee")
+    public ResponseEntity<GlobalOeeView> oee(
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant from,
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to) {
+        return ResponseEntity.ok(downtimeService.oee(TenantContext.tenantId(), from, to));
     }
 
     @GetMapping("/downtime/equipments/{equipmentId}/availability")

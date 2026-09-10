@@ -8,6 +8,7 @@ import com.telemetryhub.maintenance.domain.WorkOrder;
 import com.telemetryhub.maintenance.domain.WorkOrderPriority;
 import com.telemetryhub.maintenance.domain.WorkOrderSource;
 import com.telemetryhub.maintenance.domain.WorkOrderStatus;
+import com.telemetryhub.maintenance.domain.WorkOrderType;
 import com.telemetryhub.maintenance.persistence.WorkOrderRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -62,7 +63,7 @@ public class WorkOrderService {
     public WorkOrderView create(UUID tenantId, CreateWorkOrderRequest request) {
         WorkOrder order = new WorkOrder(
                 tenantId, request.equipmentId(), request.title().trim(), request.description(),
-                request.priority(), WorkOrderSource.MANUAL, null, request.dueAt());
+                request.priority(), WorkOrderSource.MANUAL, request.workType(), null, request.dueAt());
         return WorkOrderView.from(repository.save(order));
     }
 
@@ -78,7 +79,7 @@ public class WorkOrderService {
                 tenantId, alert.equipmentId(),
                 "Ordre automatique: " + alert.ruleName(),
                 alert.message() != null ? alert.message() : alert.ruleName(),
-                priority, WorkOrderSource.ALERT, alert.id(), null);
+                priority, WorkOrderSource.ALERT, WorkOrderType.CORRECTIVE, alert.id(), null);
         return Optional.of(WorkOrderView.from(repository.save(order)));
     }
 
@@ -95,11 +96,20 @@ public class WorkOrderService {
         if (request.priority() != null) {
             order.setPriority(request.priority());
         }
+        if (request.workType() != null) {
+            order.setWorkType(request.workType());
+        }
         if (request.equipmentId() != null) {
             order.setEquipmentId(request.equipmentId());
         }
         if (request.dueAt() != null) {
             order.setDueAt(request.dueAt());
+        }
+        if (request.spareParts() != null) {
+            order.setSpareParts(request.spareParts());
+        }
+        if (request.costEstimate() != null) {
+            order.setCostEstimate(request.costEstimate());
         }
         return WorkOrderView.from(repository.save(order));
     }
@@ -130,7 +140,7 @@ public class WorkOrderService {
     }
 
     @Transactional
-    public WorkOrderView complete(UUID tenantId, UUID id) {
+    public WorkOrderView complete(UUID tenantId, UUID id, String completionNotes) {
         WorkOrder order = find(tenantId, id);
         ensureMutable(order);
         if (order.getStatus() == WorkOrderStatus.CANCELLED) {
@@ -141,6 +151,9 @@ public class WorkOrderService {
         }
         order.setStatus(WorkOrderStatus.COMPLETED);
         order.setCompletedAt(Instant.now());
+        if (completionNotes != null && !completionNotes.isBlank()) {
+            order.setCompletionNotes(completionNotes.trim());
+        }
         return WorkOrderView.from(repository.save(order));
     }
 
@@ -165,6 +178,16 @@ public class WorkOrderService {
                 repository.countByTenantIdAndCompletedAtAfter(tenantId, todayStart),
                 repository.countByTenantIdAndStatus(tenantId, WorkOrderStatus.COMPLETED),
                 downtimeTodayMinutes);
+    }
+
+    @Transactional(readOnly = true)
+    public long countCompletedBetween(UUID tenantId, Instant from, Instant to) {
+        return repository.countByTenantIdAndCompletedAtBetween(tenantId, from, to);
+    }
+
+    @Transactional(readOnly = true)
+    public long countCreatedBetween(UUID tenantId, Instant from, Instant to) {
+        return repository.countByTenantIdAndCreatedAtBetween(tenantId, from, to);
     }
 
     private WorkOrder find(UUID tenantId, UUID id) {

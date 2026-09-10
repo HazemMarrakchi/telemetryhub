@@ -6,6 +6,7 @@ import com.telemetryhub.maintenance.domain.WorkOrder;
 import com.telemetryhub.maintenance.domain.WorkOrderPriority;
 import com.telemetryhub.maintenance.domain.WorkOrderSource;
 import com.telemetryhub.maintenance.domain.WorkOrderStatus;
+import com.telemetryhub.maintenance.domain.WorkOrderType;
 import com.telemetryhub.maintenance.persistence.WorkOrderRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -43,7 +44,7 @@ class WorkOrderServiceTest {
 
     private WorkOrder persistedOrder(WorkOrderStatus status) {
         WorkOrder order = new WorkOrder(tenantId, equipmentId, "Changer le roulement", "Opération", 
-                WorkOrderPriority.HIGH, WorkOrderSource.MANUAL, null, null);
+                WorkOrderPriority.HIGH, WorkOrderSource.MANUAL, WorkOrderType.PREVENTIVE, null, null);
         order.setStatus(status);
         when(repository.findByIdAndTenantId(eq(order.getId()), eq(tenantId)))
                 .thenReturn(Optional.of(order));
@@ -54,7 +55,7 @@ class WorkOrderServiceTest {
     void createsManualWorkOrder() {
         CreateWorkOrderRequest request = new CreateWorkOrderRequest(
                 equipmentId, "Changer le roulement", "Remplacement du roulement N°12",
-                WorkOrderPriority.HIGH, Instant.now().plusSeconds(3600));
+                WorkOrderPriority.HIGH, WorkOrderType.PREVENTIVE, Instant.now().plusSeconds(3600));
         when(repository.save(any(WorkOrder.class))).thenAnswer(inv -> inv.getArgument(0));
 
         WorkOrderView view = service.create(tenantId, request);
@@ -92,7 +93,7 @@ class WorkOrderServiceTest {
         WorkOrder order = persistedOrder(WorkOrderStatus.IN_PROGRESS);
         when(repository.save(any(WorkOrder.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        WorkOrderView view = service.complete(tenantId, order.getId());
+        WorkOrderView view = service.complete(tenantId, order.getId(), null);
 
         assertEquals(WorkOrderStatus.COMPLETED, view.status());
         assertTrue(view.completedAt() != null);

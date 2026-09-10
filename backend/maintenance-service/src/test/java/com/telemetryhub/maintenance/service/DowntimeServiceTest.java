@@ -111,4 +111,28 @@ class DowntimeServiceTest {
         assertTrue(view.availabilityPercent() > 83.0 && view.availabilityPercent() < 84.0);
         assertEquals(1, view.downtimeCount());
     }
+
+    @Test
+    void oeeMergesOverlappingDowntime() {
+        Instant from = Instant.now().minusSeconds(3600);
+        Instant to = Instant.now();
+        DowntimeEvent e1 = new DowntimeEvent(tenantId, equipmentId, UUID.randomUUID(), "temperature",
+                "message", from.plusSeconds(600), null);
+        e1.setEndedAt(from.plusSeconds(1200));
+        DowntimeEvent e2 = new DowntimeEvent(tenantId, UUID.randomUUID(), UUID.randomUUID(), "temperature",
+                "message", from.plusSeconds(900), null);
+        e2.setEndedAt(from.plusSeconds(1800));
+        when(repository.overlapping(tenantId, null, from, to)).thenReturn(List.of(e1, e2));
+        when(workOrderService.countCompletedBetween(tenantId, from, to)).thenReturn(2L);
+        when(workOrderService.countCreatedBetween(tenantId, from, to)).thenReturn(4L);
+
+        var view = service.oee(tenantId, from, to);
+
+        assertEquals(20, view.downtimeMinutes());
+        assertEquals(40, view.uptimeMinutes());
+        assertEquals(60, view.totalMinutes());
+        assertEquals(2, view.downtimeCount());
+        assertEquals(50.0, view.completionRatePercent(), 0.001);
+        assertTrue(view.availabilityPercent() > 66.0 && view.availabilityPercent() < 67.0);
+    }
 }
