@@ -54,6 +54,9 @@ telemetryhub:
     raw-topic: telemetry.raw
     anomaly-topic: telemetry.anomaly
     alerts-topic: telemetry.alerts
+  alerting:
+    default-rules:
+      tenant-ids: ${ALERTING_DEFAULT_RULES_TENANT_IDS:}
 
 logging:
   level:

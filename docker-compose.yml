@@ -140,6 +140,7 @@ services:
     restart: unless-stopped
     environment:
       SPRING_PROFILES_ACTIVE: docker
+      ALERTING_DEFAULT_RULES_TENANT_IDS: ff048b7c-cfef-41ee-9f38-ebfd6b1a97cc
     depends_on:
       kafka:
         condition: service_healthy
