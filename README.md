@@ -66,8 +66,16 @@ Module de maintenance préventive et corrective intégré au flux d'alertes :
   priorité, échéance, notes de clôture, pièces et coût estimé.
 - **Temps d'arrêt & OEE** : ouverture/fermeture automatique depuis les alertes, disponibilité machine,
   simplicité globale `GET /v1/downtime/oee` (disponibilité 24 h, arrêts fusionnés, taux de clôture).
-- **Page Maintenance** (front) : KPI temps réel, cards OEE, formulaire de création, liste filtrable,
-  assignation aux techniciens, transitions et notes de clôture.
+- **Maintenance préventive planifiée** : plannings récurrents (`GET/POST/DELETE /v1/work-orders/schedules`)
+  — le service génère automatiquement un ordre de travail (`source=SCHEDULE`) à chaque échéance
+  (`next_run_at`), avance la prochaine génération de `interval_days`, et n'ouvre qu'un seul ordre à la
+  fois par planning (dé-duplication).
+- **Historique des interventions** : `GET /v1/work-orders/history` (ordres clôturés, paginé).
+- **Tendances de coûts** : `GET /v1/work-orders/costs` — agrégation mensuelle (coût estimé) sur les
+  ordres `COMPLETED`/`CANCELLED`, alimente le graphe 12 mois de la page Maintenance.
+- **Page Maintenance** (front) : onglets *Ordres de travail*, *Historique & tendances* (graphe SVG des
+  coûts + liste des clôtures), *Maintenance préventive* (création/suppression de plannings, échéances) —
+  KPI temps réel, cards OEE, assignation aux techniciens, transitions et notes de clôture.
 
 ## Stack technique
 
@@ -183,4 +191,4 @@ telemetryhub/
 - [ ] WebSocket temps réel sur le dashboard (StockBinance-style updates)
 - [ ] Export direct datasource TimescaleDB depuis Grafana
 - [ ] Capacity planning automatique par métrique (prédiction de pannes)
-- [ ] CMMS : historique des interventions, maintenance préventive planifiée et tendances de coûts
+- [x] CMMS : historique des interventions, maintenance préventive planifiée et tendances de coûts

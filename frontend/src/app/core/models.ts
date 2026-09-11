@@ -72,7 +72,7 @@ export interface ChatResponse {
 
 export type WorkOrderStatus = 'CREATED' | 'ASSIGNED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
 export type WorkOrderPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
-export type WorkOrderSource = 'MANUAL' | 'ALERT';
+export type WorkOrderSource = 'MANUAL' | 'ALERT' | 'SCHEDULE';
 export type WorkOrderType = 'PREVENTIVE' | 'CORRECTIVE' | 'INSPECTION';
 
 export interface WorkOrder {
@@ -86,6 +86,7 @@ export interface WorkOrder {
   workType: WorkOrderType;
   assignedToUserId?: string;
   alertId?: string;
+  scheduleId?: string;
   dueAt?: string;
   startedAt?: string;
   completedAt?: string;
@@ -130,6 +131,30 @@ export interface GlobalOee {
   completedOrders: number;
   createdOrders: number;
   completionRatePercent: number;
+}
+
+export interface MaintenanceSchedule {
+  id: string;
+  equipmentId: string;
+  title: string;
+  description?: string;
+  workType: WorkOrderType;
+  priority: WorkOrderPriority;
+  intervalDays: number;
+  nextRunAt: string;
+  lastRunAt?: string;
+  active: boolean;
+  createdAt: string;
+}
+
+export interface MonthlyCost {
+  month: string;
+  orders: number;
+  totalCost: number;
+}
+
+export interface CostTrend {
+  months: MonthlyCost[];
 }
 
 export interface UserSummary {

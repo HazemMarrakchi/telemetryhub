@@ -44,4 +44,27 @@ public interface WorkOrderRepository extends JpaRepository<WorkOrder, UUID> {
     long countByTenantIdAndCreatedAtBetween(UUID tenantId, Instant from, Instant to);
 
     boolean existsByTenantIdAndAlertIdAndStatusIn(UUID tenantId, UUID alertId, List<WorkOrderStatus> openStatuses);
+
+    boolean existsByTenantIdAndScheduleIdAndStatusIn(UUID tenantId, UUID scheduleId, List<WorkOrderStatus> openStatuses);
+
+    @Query("""
+            select w from WorkOrder w
+            where w.tenantId = :tenantId and w.status in :statuses
+            """)
+    Page<WorkOrder> findClosedByTenantId(@Param("tenantId") UUID tenantId,
+                                         @Param("statuses") List<WorkOrderStatus> statuses,
+                                         Pageable pageable);
+
+    @Query("""
+            select function('date_trunc', 'month', w.completedAt),
+                   count(w),
+                   coalesce(sum(w.costEstimate), 0)
+            from WorkOrder w
+            where w.tenantId = :tenantId
+              and w.status = 'COMPLETED'
+              and w.completedAt >= :from
+            group by function('date_trunc', 'month', w.completedAt)
+            order by function('date_trunc', 'month', w.completedAt)
+            """)
+    List<Object[]> monthlyCosts(@Param("tenantId") UUID tenantId, @Param("from") Instant from);
 }

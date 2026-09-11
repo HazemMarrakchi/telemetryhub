@@ -1,7 +1,9 @@
 package com.telemetryhub.maintenance.service;
 
 import com.telemetryhub.maintenance.api.CreateWorkOrderRequest;
+import com.telemetryhub.maintenance.api.CostTrendView;
 import com.telemetryhub.maintenance.api.WorkOrderView;
+import com.telemetryhub.maintenance.domain.MaintenanceSchedule;
 import com.telemetryhub.maintenance.domain.WorkOrder;
 import com.telemetryhub.maintenance.domain.WorkOrderPriority;
 import com.telemetryhub.maintenance.domain.WorkOrderSource;
@@ -10,16 +12,24 @@ import com.telemetryhub.maintenance.domain.WorkOrderType;
 import com.telemetryhub.maintenance.persistence.WorkOrderRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
+import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -157,5 +167,65 @@ class WorkOrderServiceTest {
         assertEquals(1, kpi.overdue());
         assertEquals(2, kpi.completedToday());
         assertEquals(42L, kpi.downtimeTodayMinutes());
+    }
+
+    private MaintenanceSchedule schedule() {
+        return new MaintenanceSchedule(tenantId, equipmentId, "Lubrification mensuelle",
+                "Contrôle et graissage des paliers", WorkOrderType.PREVENTIVE,
+                WorkOrderPriority.MEDIUM, 30, Instant.now().plusSeconds(3600));
+    }
+
+    @Test
+    void createFromScheduleCreatesPreventiveOrder() {
+        MaintenanceSchedule schedule = schedule();
+        when(repository.existsByTenantIdAndScheduleIdAndStatusIn(any(), any(), anyList())).thenReturn(false);
+        when(repository.save(any(WorkOrder.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        WorkOrderView view = service.createFromSchedule(tenantId, schedule);
+
+        assertNotNull(view);
+        assertEquals(WorkOrderSource.SCHEDULE, view.source());
+        assertEquals(WorkOrderType.PREVENTIVE, view.workType());
+        assertEquals(schedule.getId(), view.scheduleId());
+        assertEquals(schedule.getTitle(), view.title());
+    }
+
+    @Test
+    void createFromScheduleSkipsWhenOpenOrderExists() {
+        MaintenanceSchedule schedule = schedule();
+        when(repository.existsByTenantIdAndScheduleIdAndStatusIn(any(), any(), anyList())).thenReturn(true);
+
+        WorkOrderView view = service.createFromSchedule(tenantId, schedule);
+
+        assertNull(view);
+        verify(repository, never()).save(any());
+    }
+
+    @Test
+    void historyReturnsClosedOrdersOnly() {
+        WorkOrder closed = persistedOrder(WorkOrderStatus.COMPLETED);
+        Page<WorkOrder> page = new PageImpl<>(List.of(closed), PageRequest.of(0, 20), 1);
+        when(repository.findClosedByTenantId(eq(tenantId), anyList(), any(Pageable.class))).thenReturn(page);
+
+        Page<WorkOrderView> result = service.history(tenantId, 0, 20);
+
+        assertEquals(1, result.getTotalElements());
+        assertEquals(WorkOrderStatus.COMPLETED, result.getContent().get(0).status());
+    }
+
+    @Test
+    void costTrendsAggregatesMonthlyCosts() {
+        when(repository.monthlyCosts(eq(tenantId), any(Instant.class)))
+                .thenReturn(List.of(
+                        new Object[]{Timestamp.from(Instant.parse("2026-09-01T00:00:00Z")), 2L, 1500.0},
+                        new Object[]{Timestamp.from(Instant.parse("2026-08-01T00:00:00Z")), 1L, 250.5}));
+
+        CostTrendView view = service.costTrends(tenantId);
+
+        assertEquals(2, view.months().size());
+        assertEquals("2026-09", view.months().get(0).month());
+        assertEquals(1500.0, view.months().get(0).totalCost(), 0.001);
+        assertEquals("2026-08", view.months().get(1).month());
+        assertEquals(1, view.months().get(1).orders());
     }
 }

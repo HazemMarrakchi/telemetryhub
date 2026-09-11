@@ -65,6 +65,9 @@ public class WorkOrder {
     @Column(name = "alert_id")
     private UUID alertId;
 
+    @Column(name = "schedule_id")
+    private UUID scheduleId;
+
     @Column(name = "due_at")
     private Instant dueAt;
 
@@ -195,6 +198,14 @@ public class WorkOrder {
 
     public UUID getAlertId() {
         return alertId;
+    }
+
+    public UUID getScheduleId() {
+        return scheduleId;
+    }
+
+    public void setScheduleId(UUID scheduleId) {
+        this.scheduleId = scheduleId;
     }
 
     public Instant getDueAt() {

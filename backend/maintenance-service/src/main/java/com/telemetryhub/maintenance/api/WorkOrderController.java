@@ -4,6 +4,7 @@ import com.telemetryhub.maintenance.domain.WorkOrderPriority;
 import com.telemetryhub.maintenance.domain.WorkOrderStatus;
 import com.telemetryhub.maintenance.security.TenantContext;
 import com.telemetryhub.maintenance.service.DowntimeService;
+import com.telemetryhub.maintenance.service.MaintenanceScheduleService;
 import com.telemetryhub.maintenance.service.WorkOrderService;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
@@ -11,6 +12,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -21,6 +23,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -30,10 +33,13 @@ public class WorkOrderController {
 
     private final WorkOrderService workOrderService;
     private final DowntimeService downtimeService;
+    private final MaintenanceScheduleService maintenanceScheduleService;
 
-    public WorkOrderController(WorkOrderService workOrderService, DowntimeService downtimeService) {
+    public WorkOrderController(WorkOrderService workOrderService, DowntimeService downtimeService,
+                               MaintenanceScheduleService maintenanceScheduleService) {
         this.workOrderService = workOrderService;
         this.downtimeService = downtimeService;
+        this.maintenanceScheduleService = maintenanceScheduleService;
     }
 
     @GetMapping("/work-orders")
@@ -53,6 +59,38 @@ public class WorkOrderController {
         UUID tenantId = TenantContext.tenantId();
         return ResponseEntity.ok(workOrderService.kpi(
                 tenantId, downtimeService.downtimeTodayMinutes(tenantId)));
+    }
+
+    @GetMapping("/work-orders/history")
+    public ResponseEntity<Page<WorkOrderView>> history(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        return ResponseEntity.ok(workOrderService.history(TenantContext.tenantId(), page, size));
+    }
+
+    @GetMapping("/work-orders/costs")
+    public ResponseEntity<CostTrendView> costs() {
+        return ResponseEntity.ok(workOrderService.costTrends(TenantContext.tenantId()));
+    }
+
+    @GetMapping("/work-orders/schedules")
+    public ResponseEntity<List<MaintenanceScheduleView>> schedules() {
+        return ResponseEntity.ok(maintenanceScheduleService.list(TenantContext.tenantId()));
+    }
+
+    @PostMapping("/work-orders/schedules")
+    @PreAuthorize("hasAnyRole('TENANT_ADMIN','OPERATOR')")
+    public ResponseEntity<MaintenanceScheduleView> createSchedule(
+            @Valid @RequestBody CreateScheduleRequest request) {
+        MaintenanceScheduleView view = maintenanceScheduleService.create(TenantContext.tenantId(), request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(view);
+    }
+
+    @DeleteMapping("/work-orders/schedules/{id}")
+    @PreAuthorize("hasAnyRole('TENANT_ADMIN','OPERATOR')")
+    public ResponseEntity<Void> deleteSchedule(@PathVariable UUID id) {
+        maintenanceScheduleService.delete(TenantContext.tenantId(), id);
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/work-orders/{id}")

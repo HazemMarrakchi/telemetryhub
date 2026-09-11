@@ -133,11 +133,16 @@ curl "http://localhost:8080/api/v1/ai/anomalies?tenantId=<TENANT_ID>&limit=100" 
 Module de maintenance préventive et corrective : une **alerte CRITIQUE/FATALE** crée automatiquement un **ordre de travail** (`source=ALERT`) et ouvre un **temps d'arrêt** ; quand l'alerte passe `RESOLVED`, le temps d'arrêt se referme. Vous pouvez aussi créer des ordres manuellement.
 
 - Page **Maintenance** : KPI (nouveaux, en cours, en retard, clôturés, minutes d'arrêt du jour), OEE global sur 24 h (disponibilité, minutes d'arrêt, taux de clôture), formulaire de création (type d'intervention), liste filtrable (statut), assignation à un technicien, transitions *Assigner → Démarrer → Terminer / Annuler* avec notes de clôture optionnelles.
+- **Onglet « Historique & tendances »** : graphe SVG des **coûts mensuels sur 12 mois** (ordres clôturés, €) + liste des interventions clôturées (date, machine, technicien, coût estimé, notes).
+- **Onglet « Maintenance préventive »** : créer un planning récurrent (machine, titre, fréquence en jours, type, priorité) → le système **génère automatiquement** un ordre de travail (`source=SCHEDULE`) à chaque échéance et avance la prochaine génération. Un seul ordre ouvert par planning à la fois.
 - Créer un ordre : `POST /v1/work-orders` `{"equipmentId","title","description","priority":"LOW|MEDIUM|HIGH|CRITICAL","workType":"PREVENTIVE|CORRECTIVE|INSPECTION"}`.
-- Transitions : `POST /v1/work-orders/{id}/assign` (body `assignedToUserId`), `POST .../start`, `POST .../complete` (body optionnel `completionNotes`), `POST .../cancel`.
+- Transitions : `POST /v1/work-orders/{id}/assign` (body `assignedToUserId`), `POST .../start`, `POST .../complete` (body optionnel `completionNotes`), `POST .../cancel`. Coût estimé : `PATCH /v1/work-orders/{id}` `{"costEstimate":185.5,"spareParts":"..."}`.
 - KPI : `GET /v1/work-orders/kpi` → `{created, assigned, inProgress, open, overdue, completedToday, completed, downtimeTodayMinutes}`.
 - Disponibilité machine (24 h) : `GET /v1/downtime/equipments/{equipmentId}/availability` → `{uptimeMinutes, downtimeMinutes, availabilityPercent, downtimeCount}`.
 - **OEE global** : `GET /v1/downtime/oee?from=…&to=…` → `{totalMinutes, uptimeMinutes, downtimeMinutes, availabilityPercent, downtimeCount, completedOrders, createdOrders, completionRatePercent}` (les arrêts se chevauchant sont fusionnés).
+- **Historique** : `GET /v1/work-orders/history` (ordres `COMPLETED`/`CANCELLED`, paginé).
+- **Tendances de coûts** : `GET /v1/work-orders/costs` → `{months:[{month:"2026-09",orders,totalCost}]}`.
+- **Plannings préventifs** : `GET /v1/work-orders/schedules`, `POST` (body `{equipmentId,title,intervalDays,workType,priority,description?}`), `DELETE /v1/work-orders/schedules/{id}`.
 
 ```bash
 # Créer un ordre de travail manuel
@@ -251,6 +256,11 @@ Tout passe par le gateway `http://localhost:8080`, préfixe `/api`, `Authorizati
 | GET | `/v1/telemetry/raw` `aggregate` `latest` | Lecture télémétrie |
 | GET/POST | `/v1/rules`              | Règles d'alerte (+ `PATCH /{id}/enabled`, `DELETE /{id}`) |
 | GET | `/v1/alerts` (+ `/acknowledge`, `/resolve`) | Événements d'alerte |
+| GET/POST/PATCH | `/v1/work-orders` (+ `/assign`, `/start`, `/complete`, `/cancel`) | Ordres de travail CMMS |
+| GET | `/v1/work-orders/history`    | Historique des interventions clôturées |
+| GET | `/v1/work-orders/costs`      | Tendances de coûts mensuelles |
+| GET/POST/DELETE | `/v1/work-orders/schedules` | Plannings de maintenance préventive |
+| GET | `/v1/downtime/oee` `/v1/downtime/equipments/{id}/availability` | Disponibilité / OEE |
 | POST | `/v1/reports` (GET liste, GET `/{id}` fichier) | Rapports CSV/PDF |
 | GET/POST | `/v1/ai/health` `/v1/ai/detect` `/v1/ai/anomalies` | Moteur IA |
 | POST | `/v1/assistant/chat` ; GET `/v1/assistant/knowledge/stats` | Assistant RAG |

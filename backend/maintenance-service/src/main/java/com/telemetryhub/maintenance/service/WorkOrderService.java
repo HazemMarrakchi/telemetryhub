@@ -1,9 +1,12 @@
 package com.telemetryhub.maintenance.service;
 
 import com.telemetryhub.maintenance.api.CreateWorkOrderRequest;
+import com.telemetryhub.maintenance.api.CostTrendView;
 import com.telemetryhub.maintenance.api.KpiView;
+import com.telemetryhub.maintenance.api.MonthlyCost;
 import com.telemetryhub.maintenance.api.UpdateWorkOrderRequest;
 import com.telemetryhub.maintenance.api.WorkOrderView;
+import com.telemetryhub.maintenance.domain.MaintenanceSchedule;
 import com.telemetryhub.maintenance.domain.WorkOrder;
 import com.telemetryhub.maintenance.domain.WorkOrderPriority;
 import com.telemetryhub.maintenance.domain.WorkOrderSource;
@@ -19,6 +22,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -28,6 +33,11 @@ public class WorkOrderService {
 
     private static final List<WorkOrderStatus> OPEN_STATUSES =
             List.of(WorkOrderStatus.CREATED, WorkOrderStatus.ASSIGNED, WorkOrderStatus.IN_PROGRESS);
+
+    private static final List<WorkOrderStatus> CLOSED_STATUSES =
+            List.of(WorkOrderStatus.COMPLETED, WorkOrderStatus.CANCELLED);
+
+    private static final DateTimeFormatter MONTH_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM");
 
     private final WorkOrderRepository repository;
 
@@ -188,6 +198,49 @@ public class WorkOrderService {
     @Transactional(readOnly = true)
     public long countCreatedBetween(UUID tenantId, Instant from, Instant to) {
         return repository.countByTenantIdAndCreatedAtBetween(tenantId, from, to);
+    }
+
+    @Transactional
+    public WorkOrderView createFromSchedule(UUID tenantId, MaintenanceSchedule schedule) {
+        boolean existing = repository.existsByTenantIdAndScheduleIdAndStatusIn(tenantId, schedule.getId(), OPEN_STATUSES);
+        if (existing) {
+            return null;
+        }
+        WorkOrder order = new WorkOrder(
+                tenantId, schedule.getEquipmentId(), schedule.getTitle(),
+                schedule.getDescription() != null ? schedule.getDescription() : schedule.getTitle(),
+                schedule.getPriority(), WorkOrderSource.SCHEDULE, schedule.getWorkType(), null,
+                schedule.getNextRunAt());
+        order.setScheduleId(schedule.getId());
+        return WorkOrderView.from(repository.save(order));
+    }
+
+    @Transactional(readOnly = true)
+    public Page<WorkOrderView> history(UUID tenantId, int page, int size) {
+        PageRequest pageable = PageRequest.of(
+                page, Math.min(size, 200), Sort.by(Sort.Direction.DESC, "completedAt", "updatedAt"));
+        return repository.findClosedByTenantId(tenantId, CLOSED_STATUSES, pageable)
+                .map(WorkOrderView::from);
+    }
+
+    @Transactional(readOnly = true)
+    public CostTrendView costTrends(UUID tenantId) {
+        Instant from = LocalDate.now().minusMonths(11).atStartOfDay().toInstant(ZoneOffset.UTC);
+        List<MonthlyCost> months = new ArrayList<>();
+        for (Object[] row : repository.monthlyCosts(tenantId, from)) {
+            Instant monthStart = toInstant(row[0]);
+            long orders = ((Number) row[1]).longValue();
+            double totalCost = ((Number) row[2]).doubleValue();
+            months.add(new MonthlyCost(MONTH_FORMAT.format(monthStart.atZone(ZoneOffset.UTC)), orders, totalCost));
+        }
+        return new CostTrendView(months);
+    }
+
+    private static Instant toInstant(Object value) {
+        if (value instanceof Instant instant) {
+            return instant;
+        }
+        return ((java.sql.Timestamp) value).toInstant();
     }
 
     private WorkOrder find(UUID tenantId, UUID id) {

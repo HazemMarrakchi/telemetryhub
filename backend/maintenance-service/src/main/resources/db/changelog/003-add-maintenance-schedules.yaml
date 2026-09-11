@@ -1,0 +1,93 @@
+databaseChangeLog:
+  - changeSet:
+      id: 003-add-maintenance-schedules
+      author: telemetryhub
+      changes:
+        - createTable:
+            schemaName: maintenance
+            tableName: maintenance_schedules
+            remarks: Planning de maintenance préventive récurrente
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: tenant_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: equipment_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: title
+                  type: VARCHAR(200)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: description
+                  type: VARCHAR(2000)
+              - column:
+                  name: work_type
+                  type: VARCHAR(16)
+                  defaultValue: PREVENTIVE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: priority
+                  type: VARCHAR(16)
+                  defaultValue: MEDIUM
+                  constraints:
+                    nullable: false
+              - column:
+                  name: interval_days
+                  type: INTEGER
+                  constraints:
+                    nullable: false
+              - column:
+                  name: next_run_at
+                  type: TIMESTAMPTZ
+                  constraints:
+                    nullable: false
+              - column:
+                  name: last_run_at
+                  type: TIMESTAMPTZ
+              - column:
+                  name: active
+                  type: BOOLEAN
+                  defaultValueBoolean: true
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: TIMESTAMPTZ
+                  defaultValueComputed: now()
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: TIMESTAMPTZ
+                  defaultValueComputed: now()
+                  constraints:
+                    nullable: false
+        - createIndex:
+            schemaName: maintenance
+            tableName: maintenance_schedules
+            indexName: idx_ms_tenant_next
+            columns:
+              - column:
+                  name: tenant_id
+              - column:
+                  name: next_run_at
+        - addColumn:
+            schemaName: maintenance
+            tableName: work_orders
+            columns:
+              - column:
+                  name: schedule_id
+                  type: UUID

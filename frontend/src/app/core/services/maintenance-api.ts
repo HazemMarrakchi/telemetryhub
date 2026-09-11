@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
-import { Availability, GlobalOee, MaintenanceKpi, WorkOrder, WorkOrderStatus } from '../models';
+import { Availability, CostTrend, GlobalOee, MaintenanceKpi, MaintenanceSchedule, WorkOrder, WorkOrderStatus } from '../models';
 import { Page } from './alerting-api';
 
 @Injectable({ providedIn: 'root' })
@@ -64,5 +64,27 @@ export class MaintenanceApi {
     return this.http.get<Availability>(`${environment.apiUrl}/v1/downtime/equipments/${equipmentId}/availability`, {
       params: { from: new Date(Date.now() - 24 * 3600 * 1000).toISOString() },
     });
+  }
+
+  history(): Observable<Page<WorkOrder>> {
+    return this.http.get<Page<WorkOrder>>(`${environment.apiUrl}/v1/work-orders/history`, {
+      params: { size: '100' },
+    });
+  }
+
+  costs(): Observable<CostTrend> {
+    return this.http.get<CostTrend>(`${environment.apiUrl}/v1/work-orders/costs`);
+  }
+
+  schedules(): Observable<MaintenanceSchedule[]> {
+    return this.http.get<MaintenanceSchedule[]>(`${environment.apiUrl}/v1/work-orders/schedules`);
+  }
+
+  createSchedule(payload: Record<string, unknown>): Observable<MaintenanceSchedule> {
+    return this.http.post<MaintenanceSchedule>(`${environment.apiUrl}/v1/work-orders/schedules`, payload);
+  }
+
+  deleteSchedule(id: string): Observable<void> {
+    return this.http.delete<void>(`${environment.apiUrl}/v1/work-orders/schedules/${id}`);
   }
 }

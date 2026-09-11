@@ -20,6 +20,7 @@ public record WorkOrderView(
         WorkOrderType workType,
         UUID assignedToUserId,
         UUID alertId,
+        UUID scheduleId,
         Instant dueAt,
         Instant startedAt,
         Instant completedAt,
@@ -38,7 +39,7 @@ public record WorkOrderView(
         return new WorkOrderView(
                 order.getId(), order.getEquipmentId(), order.getTitle(), order.getDescription(),
                 order.getPriority(), order.getStatus(), order.getSource(), order.getWorkType(),
-                order.getAssignedToUserId(), order.getAlertId(), order.getDueAt(),
+                order.getAssignedToUserId(), order.getAlertId(), order.getScheduleId(), order.getDueAt(),
                 order.getStartedAt(), order.getCompletedAt(), order.getSpareParts(),
                 order.getCostEstimate(), order.getCompletionNotes(), order.getCreatedAt(),
                 order.getUpdatedAt(), overdue);
