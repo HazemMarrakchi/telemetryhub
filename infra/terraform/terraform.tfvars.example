@@ -1,0 +1,5 @@
+project_id = "telemetryhub-prod"
+environment = "dev"
+region = "europe-west1"
+node_count = 3
+db_password = "change-me"

@@ -1,0 +1,8 @@
+**/target/
+**/.idea/
+**/*.iml
+**/.mvn/
+**/node_modules/
+.idea/
+.git/
+Dockerfile

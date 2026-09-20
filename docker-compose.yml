@@ -1,0 +1,246 @@
+name: telemetryhub
+
+services:
+  # ===================== Infrastructure =====================
+  postgres:
+    image: timescale/timescaledb-ha:pg16
+    container_name: th-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: telemetryhub
+      POSTGRES_PASSWORD: telemetryhub-dev
+      POSTGRES_DB: telemetryhub
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+      - ./backend/docker/initdb:/docker-entrypoint-initdb.d:ro
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U telemetryhub -d telemetryhub"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 90s
+
+  kafka:
+    image: apache/kafka:3.8.0
+    container_name: th-kafka
+    restart: unless-stopped
+    hostname: kafka
+    user: "0"
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: CONTROLLER://:9093,PLAINTEXT://:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      CLUSTER_ID: "4L6g3nShT-eMCtK--X86sw"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_SOCKET_REQUEST_MAX_BYTES: 1048576000
+      KAFKA_MESSAGE_MAX_BYTES: 1048576000
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_LOG_DIRS: /tmp/kraft-combined-logs
+    ports:
+      - "9092:9092"
+    volumes:
+      - kafka-data:/tmp/kraft-combined-logs
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list > /dev/null 2>&1"]
+      interval: 15s
+      timeout: 10s
+      retries: 20
+      start_period: 90s
+
+  init-topics:
+    image: apache/kafka:3.8.0
+    container_name: th-init-topics
+    user: "0"
+    depends_on:
+      kafka:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --create --if-not-exists --topic telemetry.raw --partitions 12 --replication-factor 1;
+      /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --create --if-not-exists --topic telemetry.anomaly --partitions 6 --replication-factor 1;
+      /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --create --if-not-exists --topic telemetry.alerts --partitions 6 --replication-factor 1;
+      echo 'Topics created';
+      exit 0;
+      "
+    restart: "no"
+
+  redis:
+    image: redis:7.2-alpine
+    container_name: th-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "--maxmemory", "256mb", "--maxmemory-policy", "allkeys-lru"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # ===================== Services =====================
+  auth-service:
+    build:
+      context: ./backend
+      dockerfile: auth-service/Dockerfile
+    container_name: th-auth-service
+    restart: unless-stopped
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8081:8081"
+
+  fleet-service:
+    build:
+      context: ./backend
+      dockerfile: fleet-service/Dockerfile
+    container_name: th-fleet-service
+    restart: unless-stopped
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8082:8082"
+
+  ingestion-service:
+    build:
+      context: ./backend
+      dockerfile: ingestion-service/Dockerfile
+    container_name: th-ingestion-service
+    restart: unless-stopped
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    depends_on:
+      kafka:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8083:8083"
+
+  alerting-service:
+    build:
+      context: ./backend
+      dockerfile: alerting-service/Dockerfile
+    container_name: th-alerting-service
+    restart: unless-stopped
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      ALERTING_DEFAULT_RULES_TENANT_IDS: ff048b7c-cfef-41ee-9f38-ebfd6b1a97cc
+    depends_on:
+      kafka:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8084:8084"
+
+  maintenance-service:
+    build:
+      context: ./backend
+      dockerfile: maintenance-service/Dockerfile
+    container_name: th-maintenance-service
+    restart: unless-stopped
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    depends_on:
+      kafka:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8086:8086"
+
+  reports-service:
+    build:
+      context: ./backend
+      dockerfile: reports-service/Dockerfile
+    container_name: th-reports-service
+    restart: unless-stopped
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8085:8085"
+
+  gateway-service:
+    build:
+      context: ./backend
+      dockerfile: gateway-service/Dockerfile
+    container_name: th-gateway-service
+    restart: unless-stopped
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    depends_on:
+      redis:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+
+  ai-service:
+    build:
+      context: ./ai-service
+      dockerfile: Dockerfile
+    container_name: th-ai-service
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql+psycopg2://telemetryhub:telemetryhub-dev@postgres:5432/telemetryhub
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      KAFKA_RAW_TOPIC: telemetry.raw
+      KAFKA_ANOMALY_TOPIC: telemetry.anomaly
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    ports:
+      - "8090:8090"
+
+  simulator:
+    build:
+      context: ./simulator
+      dockerfile: Dockerfile
+    container_name: th-simulator
+    restart: unless-stopped
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      KAFKA_RAW_TOPIC: telemetry.raw
+      SIM_TENANT_ID: ff048b7c-cfef-41ee-9f38-ebfd6b1a97cc
+      SIM_EQUIPMENT_IDS: >-
+        a35827bf-19ba-4e17-9016-ca02d6b0e3c6,6d70e924-2745-40cb-82a2-ecad566f6d22,
+        297e7e90-fce7-43d2-b1ae-019f2647e461,1702e30f-1e12-4f44-9b55-1a87bcec0c70,
+        a97a6f91-7685-4ab8-900c-f72dcd3674ba,b5908afc-efaa-4f3b-ba9d-48a14d99c8f9
+    depends_on:
+      kafka:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: th-frontend
+    restart: unless-stopped
+    depends_on:
+      - gateway-service
+    ports:
+      - "4200:80"
+
+volumes:
+  pg-data:
+  kafka-data:

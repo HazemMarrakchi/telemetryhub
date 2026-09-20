@@ -1,0 +1,7 @@
+databaseChangeLog:
+  - include:
+      file: db/changelog/001-init-schema.yaml
+  - include:
+      file: db/changelog/002-add-workorder-fields.yaml
+  - include:
+      file: db/changelog/003-add-maintenance-schedules.yaml

@@ -1,0 +1,18 @@
+apiVersion: v2
+name: telemetryhub
+description: TelemetryHub — plateforme SaaS multi-tenant de supervision IoT industrielle temps réel
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+keywords:
+  - iot
+  - telemetry
+  - timescale
+  - kafka
+  - supervision
+home: https://github.com/telemetryhub/telemetryhub
+sources:
+  - https://github.com/telemetryhub/telemetryhub
+maintainers:
+  - name: TelemetryHub
+    email: team@telemetryhub.dev
