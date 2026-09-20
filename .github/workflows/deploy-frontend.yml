@@ -34,7 +34,7 @@ jobs:
 
       - name: Build Angular app
         working-directory: frontend
-        run: npm run build
+        run: npm run build -- --base-href=/telemetryhub/
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
