@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>TelemetryHub</title>
+  <script type="text/javascript">
+    // GitHub Pages SPA fallback: convert any path-based URL into its hash
+    // equivalent so the Angular app (HashLocationStrategy) can handle it.
+    (function () {
+      var segmentCount = 1; // number of path segments that belong to this repo deployment (e.g. /telemetryhub)
+      var l = window.location;
+      l.replace(
+        l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') +
+        l.pathname.split('/').slice(0, segmentCount + 1).join('/') + '/#/' +
+        l.pathname.slice(1).split('/').slice(segmentCount).join('/').replace(/&/g, '~and~') +
+        (l.search ? '?' + l.search.slice(1).split('&').map(function (s) { return s.replace(/~/g, '~tilde~').replace(/and~/g, '~and~'); }).join('&') : '') +
+        l.hash
+      );
+    }());
+  </script>
+</head>
+<body>
+  <noscript>JavaScript is required for TelemetryHub. Please enable it or open the site via <a href="./#/">this link</a>.</noscript>
+</body>
+</html>
