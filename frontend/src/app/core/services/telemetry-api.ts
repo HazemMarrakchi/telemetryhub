@@ -4,12 +4,17 @@ import { Observable } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 import { MetricPoint } from '../models';
+import { DemoDataService } from './demo-data.service';
 
 @Injectable({ providedIn: 'root' })
 export class TelemetryApi {
   private http = inject(HttpClient);
+  private demo = inject(DemoDataService);
 
   raw(from: string, to: string, equipmentId?: string): Observable<MetricPoint[]> {
+    if (environment.demo) {
+      return this.demo.telemetryRaw(from, to);
+    }
     let params = new HttpParams().set('from', from).set('to', to);
     if (equipmentId) {
       params = params.set('equipmentId', equipmentId);
@@ -18,6 +23,9 @@ export class TelemetryApi {
   }
 
   aggregate(bucket: string, from: string, to: string, equipmentId?: string): Observable<MetricPoint[]> {
+    if (environment.demo) {
+      return this.demo.telemetryAggregate(bucket, from, to);
+    }
     let params = new HttpParams()
       .set('bucket', bucket)
       .set('from', from)
@@ -29,10 +37,16 @@ export class TelemetryApi {
   }
 
   latest(): Observable<MetricPoint[]> {
+    if (environment.demo) {
+      return this.demo.telemetryLatest();
+    }
     return this.http.get<MetricPoint[]>(`${environment.apiUrl}/v1/telemetry/latest`);
   }
 
   ingest(payload: Record<string, unknown>): Observable<unknown> {
+    if (environment.demo) {
+      return this.demo.telemetryLatest();
+    }
     return this.http.post(`${environment.apiUrl}/v1/ingestion/telemetry`, payload);
   }
 }
