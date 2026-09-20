@@ -1,17 +1,22 @@
-name: Deploy Frontend to Vercel
+name: Deploy Frontend to GitHub Pages
 
 on:
   push:
     branches: [main]
     paths:
       - 'frontend/**'
-
   workflow_dispatch:
 
 jobs:
-  deploy-frontend:
-    name: Deploy to Vercel
+  build-deploy:
     runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -31,11 +36,11 @@ jobs:
         working-directory: frontend
         run: npm run build
 
-      - name: Deploy to Vercel
-        uses: amondnet/vercel-action@v25
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
         with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          working-directory: frontend
-          vercel-args: '--prod'
+          path: frontend/dist/telemetryhub-frontend/browser
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
