@@ -9,6 +9,8 @@ spring:
           '[/**]':
             allowed-origins:
               - http://localhost:4200
+              - https://hazemmarrakchi.github.io
+              - https://telemetryhub-frontend.vercel.app
             allowed-methods:
               - GET
               - POST

@@ -15,7 +15,7 @@ import { selectAuthError, selectAuthLoading } from './store/auth.selectors';
     <div class="login-wrap">
       <div class="login-card">
         <div class="brand">
-          <img src="/favicon.svg" alt="TelemetryHub" width="40" height="40" />
+          <img src="favicon.svg?v=2" alt="TelemetryHub" width="40" height="40" />
           <h1>TelemetryHub</h1>
         </div>
         <p class="muted">Supervision industrielle temps réel</p>

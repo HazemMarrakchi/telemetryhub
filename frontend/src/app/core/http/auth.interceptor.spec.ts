@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
-import { provideRouter } from '@angular/router';
+import { provideRouter, Router } from '@angular/router';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpInterceptorFn, HttpRequest, HttpHandlerFn } from '@angular/common/http';
 import { authInterceptor } from './auth.interceptor';
@@ -35,11 +35,14 @@ describe('authInterceptor', () => {
 
   it('adds Bearer token to request when in localStorage', () => {
     localStorage.setItem('th_access_token', 'secret-token');
-    let capturedReq: HttpRequest<unknown> | null = null;
     const mockNext = makeNext();
-    const originalClone = (overrides: any) => {
-      const merged = { ...capturedReq, headers: { get: () => null, set: () => {} }, ...overrides };
-      return merged as HttpRequest<unknown>;
+    const baseReq = {
+      url: '/api/test',
+      headers: { get: () => null, set: () => {}, has: () => false },
+    };
+    const originalClone = (overrides: { setHeaders?: Record<string, string> }) => {
+      const merged = { ...baseReq, headers: { get: () => null, set: () => {} }, ...overrides };
+      return merged as unknown as HttpRequest<unknown>;
     };
 
     const mockReq = {

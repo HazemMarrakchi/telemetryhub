@@ -87,7 +87,7 @@ describe('MaintenanceComponent', () => {
 
   it('userName returns fullName for known user', () => {
     const component = fixture.componentInstance;
-    component.users.set([{ id: 'u1', fullName: 'Dupont Jean', role: 'TECHNICIAN' }]);
+    component.users.set([{ id: 'u1', email: 'jean.dupont@acme.com', fullName: 'Dupont Jean', role: 'TECHNICIAN' }]);
     expect(component.userName('u1')).toBe('Dupont Jean');
   });
 

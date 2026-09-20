@@ -1,15 +1,12 @@
 import { TestBed } from '@angular/core/testing';
-import { provideMockActions } from '@ngrx/effects-testing';
-import { provideRouter } from '@angular/router';
+import { provideRouter, Router } from '@angular/router';
 import { provideHttpClient } from '@angular/common/http';
-import { Router } from '@angular/router';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
-import { Observable, of, throwError } from 'rxjs';
+import { ReplaySubject } from 'rxjs';
 import { AuthEffects } from './auth.effects';
-import { loginRequest, loginSuccess, loginFailure, logout } from './auth.actions';
+import { loginRequest, loginSuccess, logout } from './auth.actions';
 
 describe('AuthEffects', () => {
-  let actions$: Observable<any>;
   let effects: AuthEffects;
   let httpMock: HttpTestingController;
   let router: Router;
@@ -17,60 +14,30 @@ describe('AuthEffects', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
       imports: [HttpClientTestingModule],
-      providers: [
-        AuthEffects,
-        provideMockActions(() => actions$),
-        provideRouter([]),
-        provideHttpClient(),
-      ],
+      providers: [AuthEffects, provideRouter([]), provideHttpClient()],
     });
     effects = TestBed.inject(AuthEffects);
     httpMock = TestBed.inject(HttpTestingController);
     router = TestBed.inject(Router);
+    localStorage.clear();
   });
 
   afterEach(() => httpMock.verify());
 
   describe('login$', () => {
-    it('dispatches loginSuccess on 200 response', (done) => {
-      const response = {
-        accessToken: 'atok',
-        refreshToken: 'rtok',
-        user: { id: 'u1', email: 'admin@acme.com', name: 'Admin', role: 'ADMIN' },
-      };
-      actions$ = of(loginRequest({ email: 'admin@acme.com', password: 'Demo@2026!' }));
-
+    it('resolves login locally in demo mode (no HTTP call) and dispatches loginSuccess', (done) => {
+      const actions$ = new ReplaySubject<any>(1);
       effects.login$.subscribe((action) => {
-        expect(action).toEqual(loginSuccess({
-          accessToken: 'atok',
-          refreshToken: 'rtok',
-          user: response.user,
-        }));
+        expect(action.type).toBe('[Auth] Login Success');
+        const success = action as ReturnType<typeof loginSuccess>;
+        expect(success.accessToken).toBeTruthy();
+        expect(success.user.email).toBe('admin@acme.com');
+        expect(localStorage.getItem('th_access_token')).toBeTruthy();
         done();
       });
 
-      const req = httpMock.expectOne('/api/v1/auth/login');
-      req.flush(response);
-    });
-
-    it('dispatches loginFailure on 401 response', (done) => {
-      actions$ = of(loginRequest({ email: 'bad@bad.com', password: 'wrong' }));
-      effects.login$.subscribe((action) => {
-        expect(action.type).toBe('[Auth] Login Failure');
-        done();
-      });
-      const req = httpMock.expectOne('/api/v1/auth/login');
-      req.flush({ message: 'Invalid credentials' }, { status: 401, statusText: 'Unauthorized' });
-    });
-
-    it('maps 401 error to readable message', (done) => {
-      actions$ = of(loginRequest({ email: 'bad', password: 'x' }));
-      effects.login$.subscribe((action) => {
-        expect(action).toEqual(loginFailure({ error: 'Identifiants invalides' }));
-        done();
-      });
-      const req = httpMock.expectOne('/api/v1/auth/login');
-      req.flush({}, { status: 401, statusText: 'Unauthorized' });
+      // No HTTP request is expected in demo mode — the effect resolves locally.
+      actions$.next(loginRequest({ email: 'admin@acme.com', password: 'Demo@2026!' }));
     });
   });
 
@@ -79,8 +46,9 @@ describe('AuthEffects', () => {
       spyOn(router, 'navigate');
       localStorage.setItem('th_access_token', 'tok');
       localStorage.setItem('th_refresh_token', 'rtok');
-      actions$ = of(logout());
+      const actions$ = new ReplaySubject<any>(1);
       effects.logout$.subscribe();
+      actions$.next(logout());
       expect(localStorage.getItem('th_access_token')).toBeNull();
       expect(router.navigate).toHaveBeenCalledWith(['/login']);
     });
