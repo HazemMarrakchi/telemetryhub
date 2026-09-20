@@ -1,4 +1,5 @@
 export const environment = {
   production: true,
-  apiUrl: 'http://localhost:8080/api',
+  apiUrl: 'https://telemetryhub-api.onrender.com/api',
+  demo: true,  // demo mode: standalone UI with realistic mock data
 };

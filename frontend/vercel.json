@@ -1,0 +1,20 @@
+{
+  "framework": "angular",
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist/telemetryhub-frontend/browser",
+  "installCommand": "npm install",
+  "devCommand": "npm start",
+  "rewrites": [
+    { "source": "/api/(**)", "destination": "https://telemetryhub-api.onrender.com/api/$1" }
+  ],
+  "headers": [
+    {
+      "source": "/api/(**)",
+      "headers": [
+        { "key": "Access-Control-Allow-Origin", "value": "https://telemetryhub-frontend.vercel.app" },
+        { "key": "Access-Control-Allow-Methods", "value": "GET,POST,PUT,DELETE,OPTIONS" },
+        { "key": "Access-Control-Allow-Headers", "value": "Content-Type, Authorization, X-Tenant-Id" }
+      ]
+    }
+  ]
+}
