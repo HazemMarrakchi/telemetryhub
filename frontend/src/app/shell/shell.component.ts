@@ -14,7 +14,7 @@ import { selectUser } from '../auth/store/auth.selectors';
     <div class="shell">
       <aside class="sidebar">
         <div class="logo">
-          <img src="favicon.svg?v=2" alt="" width="26" height="26" />
+          <img src="favicon.svg?v=3" alt="" width="26" height="26" />
           <span>TelemetryHub</span>
         </div>
         <nav class="nav">
